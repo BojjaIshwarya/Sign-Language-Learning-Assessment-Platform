@@ -1,6 +1,14 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Float,
+    Text,
+    DateTime,
+    ForeignKey
+)
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -14,15 +22,25 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
+
     name = Column(String, nullable=False)
+
     email = Column(String, unique=True, index=True, nullable=False)
+
     password = Column(String, nullable=False)
+
     role = Column(String, default="Learner")
 
     learner_profile = relationship(
         "LearnerProfile",
         back_populates="user",
         uselist=False,
+        cascade="all, delete-orphan"
+    )
+
+    courses = relationship(
+        "Course",
+        back_populates="instructor",
         cascade="all, delete-orphan"
     )
 
@@ -42,9 +60,15 @@ class LearnerProfile(Base):
         unique=True
     )
 
-    learning_level = Column(String, default="Beginner")
+    learning_level = Column(
+        String,
+        default="Beginner"
+    )
 
-    preferred_language = Column(String, default="English")
+    preferred_language = Column(
+        String,
+        default="English"
+    )
 
     created_at = Column(
         DateTime,
@@ -95,11 +119,17 @@ class LearningGoal(Base):
         ForeignKey("learner_profiles.id")
     )
 
-    goal_title = Column(String, nullable=False)
+    goal_title = Column(
+        String,
+        nullable=False
+    )
 
     description = Column(String)
 
-    status = Column(String, default="Pending")
+    status = Column(
+        String,
+        default="Pending"
+    )
 
     created_at = Column(
         DateTime,
@@ -126,11 +156,20 @@ class Skill(Base):
         ForeignKey("learner_profiles.id")
     )
 
-    skill_name = Column(String, nullable=False)
+    skill_name = Column(
+        String,
+        nullable=False
+    )
 
-    skill_level = Column(String, default="Beginner")
+    skill_level = Column(
+        String,
+        default="Beginner"
+    )
 
-    mastery_percentage = Column(Float, default=0)
+    mastery_percentage = Column(
+        Float,
+        default=0
+    )
 
     last_practiced = Column(
         DateTime,
@@ -202,4 +241,50 @@ class AssessmentHistory(Base):
     learner_profile = relationship(
         "LearnerProfile",
         back_populates="assessment_history"
+    )
+
+
+# =====================================================
+# COURSE MANAGEMENT
+# =====================================================
+
+class Course(Base):
+    __tablename__ = "courses"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    title = Column(
+        String,
+        nullable=False
+    )
+
+    description = Column(
+        Text,
+        nullable=False
+    )
+
+    category = Column(
+        String,
+        nullable=False
+    )
+
+    level = Column(
+        String,
+        nullable=False
+    )
+
+    created_by = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+    instructor = relationship(
+        "User",
+        back_populates="courses"
     )

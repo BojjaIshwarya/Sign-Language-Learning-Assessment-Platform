@@ -153,3 +153,33 @@ class AssessmentHistoryResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        
+# =====================================================
+# COURSE MANAGEMENT
+# =====================================================
+
+class CourseCreate(BaseModel):
+    title: str
+    description: str
+    category: str
+    level: str
+
+
+class CourseUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[str] = None
+    level: Optional[str] = None
+
+
+class CourseResponse(BaseModel):
+    id: int
+    title: str
+    description: str
+    category: str
+    level: str
+    created_by: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
