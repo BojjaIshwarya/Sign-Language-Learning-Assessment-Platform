@@ -501,3 +501,72 @@ def create_assessment_history(
     db.refresh(db_assessment)
 
     return db_assessment
+    
+def create_lesson(db: Session, course_id: int, lesson: schemas.LessonCreate):
+
+    course = db.query(models.Course).filter(
+        models.Course.id == course_id
+    ).first()
+
+    if not course:
+        return None
+
+    db_lesson = models.Lesson(
+        course_id=course_id,
+        title=lesson.title,
+        description=lesson.description,
+        lesson_order=lesson.lesson_order
+    )
+
+    db.add(db_lesson)
+    db.commit()
+    db.refresh(db_lesson)
+
+    return db_lesson
+    
+def get_lessons_by_course(db: Session, course_id: int):
+
+    return db.query(models.Lesson).filter(
+        models.Lesson.course_id == course_id
+    ).order_by(
+        models.Lesson.lesson_order
+    ).all()
+    
+def get_lesson(db: Session, lesson_id: int):
+
+    return db.query(models.Lesson).filter(
+        models.Lesson.id == lesson_id
+    ).first()
+    
+def update_lesson(
+    db: Session,
+    lesson_id: int,
+    lesson: schemas.LessonUpdate
+):
+
+    db_lesson = get_lesson(db, lesson_id)
+
+    if not db_lesson:
+        return None
+
+    update_data = lesson.model_dump(exclude_unset=True)
+
+    for key, value in update_data.items():
+        setattr(db_lesson, key, value)
+
+    db.commit()
+    db.refresh(db_lesson)
+
+    return db_lesson
+    
+def delete_lesson(db: Session, lesson_id: int):
+
+    lesson = get_lesson(db, lesson_id)
+
+    if not lesson:
+        return False
+
+    db.delete(lesson)
+    db.commit()
+
+    return True

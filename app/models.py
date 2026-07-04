@@ -288,3 +288,40 @@ class Course(Base):
         "User",
         back_populates="courses"
     )
+    
+    lessons = relationship(
+    "Lesson",
+    back_populates="course",
+    cascade="all, delete-orphan"
+	)
+	
+# =====================================================
+# LESSON MANAGEMENT
+# =====================================================
+
+class Lesson(Base):
+    __tablename__ = "lessons"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    course_id = Column(
+        Integer,
+        ForeignKey("courses.id"),
+        nullable=False
+    )
+
+    title = Column(String, nullable=False)
+
+    description = Column(String)
+
+    lesson_order = Column(Integer, nullable=False)
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+    course = relationship(
+        "Course",
+        back_populates="lessons"
+    )

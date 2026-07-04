@@ -155,6 +155,33 @@ class CourseResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        
+# =====================================================
+# LESSON MANAGEMENT
+# =====================================================
+
+class LessonCreate(BaseModel):
+    title: str
+    description: str
+    lesson_order: int
+
+
+class LessonUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    lesson_order: Optional[int] = None
+
+
+class LessonResponse(BaseModel):
+    id: int
+    course_id: int
+    title: str
+    description: str
+    lesson_order: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
      
 # ==========================================
 # PRACTICE HISTORY
