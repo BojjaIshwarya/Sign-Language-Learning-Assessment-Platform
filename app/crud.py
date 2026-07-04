@@ -285,11 +285,14 @@ def create_skill(db: Session, current_user, skill: schemas.SkillCreate):
 
     learner = get_learner_profile(db, current_user)
 
+    if learner is None:
+        return None
+
     db_skill = models.Skill(
         learner_profile_id=learner.id,
         skill_name=skill.skill_name,
         skill_level=skill.skill_level,
-        mastery_percentage=0
+        mastery_percentage=skill.mastery_percentage
     )
 
     db.add(db_skill)
@@ -328,6 +331,30 @@ def update_skill(db: Session, current_user, skill_id: int, skill: schemas.SkillU
     db.refresh(db_skill)
 
     return db_skill
+    
+# ==========================================
+# DELETE SKILL
+# ==========================================
+
+def delete_skill(db: Session, current_user, skill_id: int):
+
+    learner = get_learner_profile(db, current_user)
+
+    if learner is None:
+        return False
+
+    skill = db.query(models.Skill).filter(
+        models.Skill.id == skill_id,
+        models.Skill.learner_profile_id == learner.id
+    ).first()
+
+    if skill is None:
+        return False
+
+    db.delete(skill)
+    db.commit()
+
+    return True
     
 # ==========================================
 # COURSE MANAGEMENT
@@ -418,3 +445,59 @@ def delete_course(
     db.commit()
 
     return db_course
+
+# ==========================================
+# CREATE PRACTICE HISTORY
+# ==========================================
+
+def create_practice_history(
+    db: Session,
+    current_user,
+    practice: schemas.PracticeHistoryCreate
+):
+
+    learner = get_learner_profile(db, current_user)
+
+    if learner is None:
+        return None
+
+    db_practice = models.PracticeHistory(
+        learner_profile_id=learner.id,
+        lesson_name=practice.lesson_name,
+        score=practice.score,
+        duration=practice.duration
+    )
+
+    db.add(db_practice)
+    db.commit()
+    db.refresh(db_practice)
+
+    return db_practice
+    
+# ==========================================
+# CREATE ASSESSMENT HISTORY
+# ==========================================
+
+def create_assessment_history(
+    db: Session,
+    current_user,
+    assessment: schemas.AssessmentHistoryCreate
+):
+
+    learner = get_learner_profile(db, current_user)
+
+    if learner is None:
+        return None
+
+    db_assessment = models.AssessmentHistory(
+        learner_profile_id=learner.id,
+        assessment_name=assessment.assessment_name,
+        score=assessment.score,
+        level=assessment.level
+    )
+
+    db.add(db_assessment)
+    db.commit()
+    db.refresh(db_assessment)
+
+    return db_assessment

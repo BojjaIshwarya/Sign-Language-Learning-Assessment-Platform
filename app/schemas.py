@@ -38,8 +38,8 @@ class UserProfile(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    name: str
-    email: EmailStr
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
 
 
 class ChangePassword(BaseModel):
@@ -106,9 +106,11 @@ class LearningGoalResponse(BaseModel):
 class SkillCreate(BaseModel):
     skill_name: str
     skill_level: str = "Beginner"
+    mastery_percentage: float = 0
 
 
 class SkillUpdate(BaseModel):
+    skill_name: Optional[str] = None
     skill_level: Optional[str] = None
     mastery_percentage: Optional[float] = None
 
@@ -120,36 +122,6 @@ class SkillResponse(BaseModel):
     skill_level: str
     mastery_percentage: float
     last_practiced: datetime
-
-    class Config:
-        from_attributes = True
-
-
-# =====================================================
-# PRACTICE HISTORY
-# =====================================================
-
-class PracticeHistoryResponse(BaseModel):
-    id: int
-    lesson_name: str
-    score: float
-    duration: int
-    practiced_on: datetime
-
-    class Config:
-        from_attributes = True
-
-
-# =====================================================
-# ASSESSMENT HISTORY
-# =====================================================
-
-class AssessmentHistoryResponse(BaseModel):
-    id: int
-    assessment_name: str
-    score: float
-    level: str
-    assessed_on: datetime
 
     class Config:
         from_attributes = True
@@ -180,6 +152,48 @@ class CourseResponse(BaseModel):
     level: str
     created_by: int
     created_at: datetime
+
+    class Config:
+        from_attributes = True
+     
+# ==========================================
+# PRACTICE HISTORY
+# ==========================================
+
+class PracticeHistoryCreate(BaseModel):
+    lesson_name: str
+    score: float
+    duration: int
+
+
+class PracticeHistoryResponse(BaseModel):
+    id: int
+    learner_profile_id: int
+    lesson_name: str
+    score: float
+    duration: int
+    practiced_on: datetime
+
+    class Config:
+        from_attributes = True
+        
+# ==========================================
+# ASSESSMENT HISTORY
+# ==========================================
+
+class AssessmentHistoryCreate(BaseModel):
+    assessment_name: str
+    score: float
+    level: str
+
+
+class AssessmentHistoryResponse(BaseModel):
+    id: int
+    learner_profile_id: int
+    assessment_name: str
+    score: float
+    level: str
+    assessed_on: datetime
 
     class Config:
         from_attributes = True

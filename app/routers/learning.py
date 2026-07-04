@@ -218,11 +218,65 @@ def update_skill(
 
     return updated_skill
 
+# ==========================================
+# DELETE SKILL
+# ==========================================
 
+@router.delete("/skills/{skill_id}")
+def delete_skill(
+    skill_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    success = crud.delete_skill(
+        db,
+        current_user,
+        skill_id
+    )
+
+    if not success:
+        raise HTTPException(
+            status_code=404,
+            detail="Skill not found"
+        )
+
+    return {
+        "message": "Skill deleted successfully."
+    }
+    
 # =====================================================
 # PRACTICE HISTORY
 # =====================================================
 
+# ==========================================
+# CREATE PRACTICE HISTORY
+# ==========================================
+
+@router.post(
+    "/practice",
+    response_model=schemas.PracticeHistoryResponse
+)
+def create_practice(
+    practice: schemas.PracticeHistoryCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    result = crud.create_practice_history(
+        db,
+        current_user,
+        practice
+    )
+
+    if result is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Learner profile not found"
+        )
+
+    return result
+    
 @router.get(
     "/practice-history",
     response_model=list[schemas.PracticeHistoryResponse]
@@ -241,6 +295,34 @@ def practice_history(
 # =====================================================
 # ASSESSMENT HISTORY
 # =====================================================
+
+# ==========================================
+# CREATE ASSESSMENT HISTORY
+# ==========================================
+
+@router.post(
+    "/assessment",
+    response_model=schemas.AssessmentHistoryResponse
+)
+def create_assessment(
+    assessment: schemas.AssessmentHistoryCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    result = crud.create_assessment_history(
+        db,
+        current_user,
+        assessment
+    )
+
+    if result is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Learner profile not found"
+        )
+
+    return result
 
 @router.get(
     "/assessment-history",
