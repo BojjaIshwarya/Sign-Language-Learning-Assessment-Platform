@@ -257,19 +257,26 @@ def update_learning_goal(db: Session, current_user, goal_id: int, goal: schemas.
 
     return db_goal
     
-def delete_learning_goal(db: Session, current_user, goal_id: int):
+def delete_learning_goal(
+    db: Session,
+    current_user,
+    goal_id: int
+):
 
     learner = get_learner_profile(db, current_user)
 
-    db_goal = db.query(models.LearningGoal).filter(
+    if learner is None:
+        return None
+
+    goal = db.query(models.LearningGoal).filter(
         models.LearningGoal.id == goal_id,
         models.LearningGoal.learner_profile_id == learner.id
     ).first()
 
-    if not db_goal:
-        return False
+    if goal is None:
+        return None
 
-    db.delete(db_goal)
+    db.delete(goal)
     db.commit()
 
     return True
