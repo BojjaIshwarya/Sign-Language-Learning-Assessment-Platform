@@ -238,7 +238,38 @@ class LessonContentResponse(BaseModel):
 
     class Config:
         from_attributes = True
-            
+ 
+# =====================================================
+# LEARNING PATH MANAGEMENT
+# =====================================================
+
+class LearningPathCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+
+
+class LearningPathUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+
+
+class LearningPathResponse(BaseModel):
+    id: int
+    title: str
+    description: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class LearningPathCourseResponse(BaseModel):
+    id: int
+    learning_path_id: int
+    course_id: int
+
+    class Config:
+        from_attributes = True           
 # ==========================================
 # PRACTICE HISTORY
 # ==========================================

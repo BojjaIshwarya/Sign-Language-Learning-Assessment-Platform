@@ -733,3 +733,125 @@ def delete_lesson_content(
     db.commit()
 
     return True
+    
+def create_learning_path(
+    db: Session,
+    path: schemas.LearningPathCreate
+):
+
+    db_path = models.LearningPath(
+        title=path.title,
+        description=path.description
+    )
+
+    db.add(db_path)
+    db.commit()
+    db.refresh(db_path)
+
+    return db_path
+    
+def get_learning_paths(db: Session):
+
+    return db.query(
+        models.LearningPath
+    ).all()
+    
+def get_learning_path(
+    db: Session,
+    path_id: int
+):
+
+    return db.query(
+        models.LearningPath
+    ).filter(
+        models.LearningPath.id == path_id
+    ).first()
+    
+def update_learning_path(
+    db: Session,
+    path_id: int,
+    path: schemas.LearningPathUpdate
+):
+
+    db_path = get_learning_path(
+        db,
+        path_id
+    )
+
+    if not db_path:
+        return None
+
+    update_data = path.model_dump(
+        exclude_unset=True
+    )
+
+    for key, value in update_data.items():
+        setattr(db_path, key, value)
+
+    db.commit()
+    db.refresh(db_path)
+
+    return db_path
+    
+def delete_learning_path(
+    db: Session,
+    path_id: int
+):
+
+    db_path = get_learning_path(
+        db,
+        path_id
+    )
+
+    if not db_path:
+        return False
+
+    db.delete(db_path)
+    db.commit()
+
+    return True
+    
+def add_course_to_learning_path(
+    db: Session,
+    path_id: int,
+    course_id: int
+):
+
+    path = get_learning_path(
+        db,
+        path_id
+    )
+
+    if not path:
+        return None
+
+    course = db.query(
+        models.Course
+    ).filter(
+        models.Course.id == course_id
+    ).first()
+
+    if not course:
+        return None
+
+    mapping = models.LearningPathCourse(
+        learning_path_id=path_id,
+        course_id=course_id
+    )
+
+    db.add(mapping)
+    db.commit()
+    db.refresh(mapping)
+
+    return mapping
+    
+def get_learning_path_courses(
+    db: Session,
+    path_id: int
+):
+
+    return db.query(
+        models.LearningPathCourse
+    ).filter(
+        models.LearningPathCourse.learning_path_id == path_id
+    ).all()

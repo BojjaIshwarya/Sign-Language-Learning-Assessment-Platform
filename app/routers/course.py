@@ -60,7 +60,129 @@ def get_courses(
 
     return crud.get_all_courses(db)
 
+@router.post(
+    "/learning-paths",
+    response_model=schemas.LearningPathResponse
+)
+def create_learning_path(
+    path: schemas.LearningPathCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    return crud.create_learning_path(db, path)
+    
+@router.get(
+    "/learning-paths",
+    response_model=list[schemas.LearningPathResponse]
+)
+def get_learning_paths(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    return crud.get_learning_paths(db)
+    
+@router.get(
+    "/learning-paths/{path_id}",
+    response_model=schemas.LearningPathResponse
+)
+def get_learning_path(
+    path_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    path = crud.get_learning_path(db, path_id)
 
+    if path is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Learning path not found"
+        )
+
+    return path
+    
+@router.put(
+    "/learning-paths/{path_id}",
+    response_model=schemas.LearningPathResponse
+)
+def update_learning_path(
+    path_id: int,
+    path: schemas.LearningPathUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    updated = crud.update_learning_path(
+        db,
+        path_id,
+        path
+    )
+
+    if updated is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Learning path not found"
+        )
+
+    return updated
+    
+@router.delete("/learning-paths/{path_id}")
+def delete_learning_path(
+    path_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    success = crud.delete_learning_path(
+        db,
+        path_id
+    )
+
+    if not success:
+        raise HTTPException(
+            status_code=404,
+            detail="Learning path not found"
+        )
+
+    return {
+        "message": "Learning path deleted successfully"
+    }
+    
+@router.post(
+    "/learning-paths/{path_id}/courses/{course_id}",
+    response_model=schemas.LearningPathCourseResponse
+)
+def add_course_to_learning_path(
+    path_id: int,
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    mapping = crud.add_course_to_learning_path(
+        db,
+        path_id,
+        course_id
+    )
+
+    if mapping is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Learning path or course not found"
+        )
+
+    return mapping
+    
+@router.get(
+    "/learning-paths/{path_id}/courses",
+    response_model=list[schemas.LearningPathCourseResponse]
+)
+def get_learning_path_courses(
+    path_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    return crud.get_learning_path_courses(
+        db,
+        path_id
+    )
+    
 # ==========================================
 # GET COURSE BY ID
 # ==========================================

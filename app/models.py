@@ -432,3 +432,52 @@ class LessonContent(Base):
         "Lesson",
         back_populates="contents"
     )
+   
+# =====================================================
+# LEARNING PATH MANAGEMENT
+# =====================================================
+
+class LearningPath(Base):
+    __tablename__ = "learning_paths"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    title = Column(String, nullable=False)
+
+    description = Column(String)
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+    courses = relationship(
+        "LearningPathCourse",
+        back_populates="learning_path",
+        cascade="all, delete-orphan"
+    )
+
+
+class LearningPathCourse(Base):
+    __tablename__ = "learning_path_courses"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    learning_path_id = Column(
+        Integer,
+        ForeignKey("learning_paths.id"),
+        nullable=False
+    )
+
+    course_id = Column(
+        Integer,
+        ForeignKey("courses.id"),
+        nullable=False
+    )
+
+    learning_path = relationship(
+        "LearningPath",
+        back_populates="courses"
+    )
+
+    course = relationship("Course")
