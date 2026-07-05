@@ -156,6 +156,116 @@ def delete_course(
     }
     
 @router.post(
+    "/{course_id}/modules",
+    response_model=schemas.ModuleResponse
+)
+def create_module(
+    course_id: int,
+    module: schemas.ModuleCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    db_module = crud.create_module(
+        db,
+        course_id,
+        module
+    )
+
+    if db_module is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Course not found"
+        )
+
+    return db_module
+    
+@router.get(
+    "/{course_id}/modules",
+    response_model=list[schemas.ModuleResponse]
+)
+def get_modules(
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    return crud.get_modules_by_course(
+        db,
+        course_id
+    )
+    
+@router.get(
+    "/modules/{module_id}",
+    response_model=schemas.ModuleResponse
+)
+def get_module(
+    module_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    module = crud.get_module(
+        db,
+        module_id
+    )
+
+    if module is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Module not found"
+        )
+
+    return module
+    
+@router.put(
+    "/modules/{module_id}",
+    response_model=schemas.ModuleResponse
+)
+def update_module(
+    module_id: int,
+    module: schemas.ModuleUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    updated = crud.update_module(
+        db,
+        module_id,
+        module
+    )
+
+    if updated is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Module not found"
+        )
+
+    return updated
+    
+@router.delete("/modules/{module_id}")
+def delete_module(
+    module_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    success = crud.delete_module(
+        db,
+        module_id
+    )
+
+    if not success:
+        raise HTTPException(
+            status_code=404,
+            detail="Module not found"
+        )
+
+    return {
+        "message": "Module deleted successfully"
+    }
+    
+@router.post(
     "/{course_id}/lessons",
     response_model=schemas.LessonResponse
 )

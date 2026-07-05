@@ -570,3 +570,85 @@ def delete_lesson(db: Session, lesson_id: int):
     db.commit()
 
     return True
+    
+def create_module(
+    db: Session,
+    course_id: int,
+    module: schemas.ModuleCreate
+):
+
+    course = db.query(models.Course).filter(
+        models.Course.id == course_id
+    ).first()
+
+    if not course:
+        return None
+
+    db_module = models.CourseModule(
+        course_id=course_id,
+        title=module.title,
+        description=module.description,
+        module_order=module.module_order
+    )
+
+    db.add(db_module)
+    db.commit()
+    db.refresh(db_module)
+
+    return db_module
+    
+def get_modules_by_course(
+    db: Session,
+    course_id: int
+):
+
+    return db.query(models.CourseModule).filter(
+        models.CourseModule.course_id == course_id
+    ).order_by(
+        models.CourseModule.module_order
+    ).all()
+    
+def get_module(
+    db: Session,
+    module_id: int
+):
+
+    return db.query(models.CourseModule).filter(
+        models.CourseModule.id == module_id
+    ).first()
+    
+def update_module(
+    db: Session,
+    module_id: int,
+    module: schemas.ModuleUpdate
+):
+
+    db_module = get_module(db, module_id)
+
+    if not db_module:
+        return None
+
+    update_data = module.model_dump(exclude_unset=True)
+
+    for key, value in update_data.items():
+        setattr(db_module, key, value)
+
+    db.commit()
+    db.refresh(db_module)
+
+    return db_module
+    
+def delete_module(
+    db: Session,
+    module_id: int
+):
+
+    db_module = get_module(db, module_id)
+
+    if not db_module:
+        return False
+
+    db.delete(db_module)
+    db.commit()
+
+    return True

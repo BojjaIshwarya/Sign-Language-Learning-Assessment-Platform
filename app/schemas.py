@@ -157,6 +157,32 @@ class CourseResponse(BaseModel):
         from_attributes = True
         
 # =====================================================
+# COURSE MODULE MANAGEMENT
+# =====================================================
+
+class ModuleCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    module_order: int
+
+
+class ModuleUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    module_order: Optional[int] = None
+
+
+class ModuleResponse(BaseModel):
+    id: int
+    course_id: int
+    title: str
+    description: Optional[str]
+    module_order: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+# =====================================================
 # LESSON MANAGEMENT
 # =====================================================
 

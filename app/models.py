@@ -293,7 +293,50 @@ class Course(Base):
     "Lesson",
     back_populates="course",
     cascade="all, delete-orphan"
-	)
+    )
+	
+    modules = relationship(
+    "CourseModule",
+    back_populates="course",
+    cascade="all, delete-orphan"
+    )
+
+# =====================================================
+# COURSE MODULE MANAGEMENT
+# =====================================================
+
+class CourseModule(Base):
+    __tablename__ = "course_modules"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    course_id = Column(
+        Integer,
+        ForeignKey("courses.id"),
+        nullable=False
+    )
+
+    title = Column(String, nullable=False)
+
+    description = Column(String)
+
+    module_order = Column(Integer, nullable=False)
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+    course = relationship(
+        "Course",
+        back_populates="modules"
+    )
+
+    lessons = relationship(
+        "Lesson",
+        back_populates="module",
+        cascade="all, delete-orphan"
+    )
 	
 # =====================================================
 # LESSON MANAGEMENT
@@ -308,6 +351,12 @@ class Lesson(Base):
         Integer,
         ForeignKey("courses.id"),
         nullable=False
+    )
+    
+    module_id = Column(
+    Integer,
+    ForeignKey("course_modules.id"),
+    nullable=True
     )
 
     title = Column(String, nullable=False)
@@ -324,4 +373,9 @@ class Lesson(Base):
     course = relationship(
         "Course",
         back_populates="lessons"
+    )
+    
+    module = relationship(
+    "CourseModule",
+    back_populates="lessons"
     )
