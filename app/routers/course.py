@@ -374,3 +374,113 @@ def delete_lesson(
     return {
         "message": "Lesson deleted successfully"
     }
+    
+@router.post(
+    "/lessons/{lesson_id}/content",
+    response_model=schemas.LessonContentResponse
+)
+def create_lesson_content(
+    lesson_id: int,
+    content: schemas.LessonContentCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    db_content = crud.create_lesson_content(
+        db,
+        lesson_id,
+        content
+    )
+
+    if db_content is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Lesson not found"
+        )
+
+    return db_content
+    
+@router.get(
+    "/lessons/{lesson_id}/content",
+    response_model=list[schemas.LessonContentResponse]
+)
+def get_lesson_contents(
+    lesson_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    return crud.get_lesson_contents(
+        db,
+        lesson_id
+    )
+    
+@router.get(
+    "/content/{content_id}",
+    response_model=schemas.LessonContentResponse
+)
+def get_lesson_content(
+    content_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    content = crud.get_lesson_content(
+        db,
+        content_id
+    )
+
+    if content is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Content not found"
+        )
+
+    return content
+    
+@router.put(
+    "/content/{content_id}",
+    response_model=schemas.LessonContentResponse
+)
+def update_lesson_content(
+    content_id: int,
+    content: schemas.LessonContentUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    updated = crud.update_lesson_content(
+        db,
+        content_id,
+        content
+    )
+
+    if updated is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Content not found"
+        )
+
+    return updated
+    
+@router.delete("/content/{content_id}")
+def delete_lesson_content(
+    content_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    success = crud.delete_lesson_content(
+        db,
+        content_id
+    )
+
+    if not success:
+        raise HTTPException(
+            status_code=404,
+            detail="Content not found"
+        )
+
+    return {
+        "message": "Lesson content deleted successfully"
+    }

@@ -379,3 +379,56 @@ class Lesson(Base):
     "CourseModule",
     back_populates="lessons"
     )
+    
+    contents = relationship(
+    "LessonContent",
+    back_populates="lesson",
+    cascade="all, delete-orphan"
+    )  
+     
+    contents = relationship(
+    "LessonContent",
+    back_populates="lesson",
+    cascade="all, delete-orphan"
+    )
+# =====================================================
+# LESSON CONTENT MANAGEMENT
+# =====================================================
+
+class LessonContent(Base):
+    __tablename__ = "lesson_contents"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    lesson_id = Column(
+        Integer,
+        ForeignKey("lessons.id"),
+        nullable=False
+    )
+
+    title = Column(
+        String,
+        nullable=False
+    )
+
+    content_type = Column(
+        String,
+        nullable=False
+    )  # Video, PDF, Image, Text
+
+    content_url = Column(
+        String,
+        nullable=False
+    )
+
+    description = Column(String)
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+    lesson = relationship(
+        "Lesson",
+        back_populates="contents"
+    )

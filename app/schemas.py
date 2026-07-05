@@ -208,7 +208,37 @@ class LessonResponse(BaseModel):
 
     class Config:
         from_attributes = True
-     
+
+# =====================================================
+# LESSON CONTENT MANAGEMENT
+# =====================================================
+
+class LessonContentCreate(BaseModel):
+    title: str
+    content_type: str
+    content_url: str
+    description: Optional[str] = None
+
+
+class LessonContentUpdate(BaseModel):
+    title: Optional[str] = None
+    content_type: Optional[str] = None
+    content_url: Optional[str] = None
+    description: Optional[str] = None
+
+
+class LessonContentResponse(BaseModel):
+    id: int
+    lesson_id: int
+    title: str
+    content_type: str
+    content_url: str
+    description: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+            
 # ==========================================
 # PRACTICE HISTORY
 # ==========================================

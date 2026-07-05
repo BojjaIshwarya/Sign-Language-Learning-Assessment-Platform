@@ -652,3 +652,84 @@ def delete_module(
     db.commit()
 
     return True
+    
+def create_lesson_content(
+    db: Session,
+    lesson_id: int,
+    content: schemas.LessonContentCreate
+):
+
+    lesson = db.query(models.Lesson).filter(
+        models.Lesson.id == lesson_id
+    ).first()
+
+    if not lesson:
+        return None
+
+    db_content = models.LessonContent(
+        lesson_id=lesson_id,
+        title=content.title,
+        content_type=content.content_type,
+        content_url=content.content_url,
+        description=content.description
+    )
+
+    db.add(db_content)
+    db.commit()
+    db.refresh(db_content)
+
+    return db_content
+    
+def get_lesson_contents(
+    db: Session,
+    lesson_id: int
+):
+
+    return db.query(models.LessonContent).filter(
+        models.LessonContent.lesson_id == lesson_id
+    ).all()
+    
+def get_lesson_content(
+    db: Session,
+    content_id: int
+):
+
+    return db.query(models.LessonContent).filter(
+        models.LessonContent.id == content_id
+    ).first()
+    
+def update_lesson_content(
+    db: Session,
+    content_id: int,
+    content: schemas.LessonContentUpdate
+):
+
+    db_content = get_lesson_content(db, content_id)
+
+    if not db_content:
+        return None
+
+    update_data = content.model_dump(exclude_unset=True)
+
+    for key, value in update_data.items():
+        setattr(db_content, key, value)
+
+    db.commit()
+    db.refresh(db_content)
+
+    return db_content
+    
+def delete_lesson_content(
+    db: Session,
+    content_id: int
+):
+
+    db_content = get_lesson_content(db, content_id)
+
+    if not db_content:
+        return False
+
+    db.delete(db_content)
+    db.commit()
+
+    return True
