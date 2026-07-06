@@ -1,14 +1,18 @@
 import cv2
 import mediapipe as mp
-from landmarks import get_finger_states
 
+from ai.landmarks import get_finger_states
+from ai.predictor import predict
+
+# -----------------------------
 # MediaPipe Hands
+# -----------------------------
 mp_hands = mp.solutions.hands
 mp_draw = mp.solutions.drawing_utils
 
 hands = mp_hands.Hands(
     static_image_mode=False,
-    max_num_hands=2,
+    max_num_hands=1,
     min_detection_confidence=0.7,
     min_tracking_confidence=0.7
 )
@@ -22,6 +26,7 @@ if not cap.isOpened():
 print("Press 'q' to quit.")
 
 while True:
+
     ret, frame = cap.read()
 
     if not ret:
@@ -35,39 +40,73 @@ while True:
 
     if results.multi_hand_landmarks:
 
+        h, w, _ = frame.shape
+
         for hand_landmarks in results.multi_hand_landmarks:
 
-            # Draw landmarks
             mp_draw.draw_landmarks(
                 frame,
                 hand_landmarks,
                 mp_hands.HAND_CONNECTIONS
             )
 
-            # Print landmark count
-            cv2.putText(
+            finger_states = get_finger_states(hand_landmarks)
+
+            # -----------------------------
+            # Bounding Box
+            # -----------------------------
+            x_list = []
+            y_list = []
+
+            for lm in hand_landmarks.landmark:
+                x_list.append(int(lm.x * w))
+                y_list.append(int(lm.y * h))
+
+            x_min = max(min(x_list) - 20, 0)
+            y_min = max(min(y_list) - 20, 0)
+
+            x_max = min(max(x_list) + 20, w)
+            y_max = min(max(y_list) + 20, h)
+
+            cv2.rectangle(
                 frame,
-                f"Landmarks: {len(hand_landmarks.landmark)}",
-                (20, 40),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.8,
+                (x_min, y_min),
+                (x_max, y_max),
                 (0, 255, 0),
                 2
             )
-            
-            finger_states = get_finger_states(hand_landmarks)
+
+            hand_image = frame[y_min:y_max, x_min:x_max]
+
+            if hand_image.size != 0:
+
+                try:
+                    label, confidence = predict(hand_image)
+
+                    cv2.putText(
+                        frame,
+                        f"{label} ({confidence*100:.1f}%)",
+                        (x_min, y_min - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.8,
+                        (0, 255, 0),
+                        2
+                    )
+
+                except Exception:
+                    pass
 
             cv2.putText(
                 frame,
                 str(finger_states),
-                (20, 80),
+                (20, 40),
                 cv2.FONT_HERSHEY_SIMPLEX,
-                0.8,
+                0.7,
                 (255, 0, 0),
                 2
-             )
+            )
 
-    cv2.imshow("Hand Landmark Detection", frame)
+    cv2.imshow("Sign Language Recognition", frame)
 
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
