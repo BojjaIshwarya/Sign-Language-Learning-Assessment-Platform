@@ -1,10 +1,18 @@
-venv/
+# Python
 __pycache__/
 *.pyc
-*.pyo
-.env
-.vscode/
-.idea/
-.pytest_cache/
-uploads/
+
+# Virtual environments
+venv/
+venv_app/
+
+# Models
+ai/models/
+*.keras
+*.h5
+
+# Datasets
+datasets/
+
+# Temporary files
 *.log
