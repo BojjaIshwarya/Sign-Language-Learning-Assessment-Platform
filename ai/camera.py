@@ -62,11 +62,13 @@ while True:
                 x_list.append(int(lm.x * w))
                 y_list.append(int(lm.y * h))
 
-            x_min = max(min(x_list) - 20, 0)
-            y_min = max(min(y_list) - 20, 0)
+            margin = 40
 
-            x_max = min(max(x_list) + 20, w)
-            y_max = min(max(y_list) + 20, h)
+            x_min = max(min(x_list) - margin, 0)
+            y_min = max(min(y_list) - margin, 0)
+
+            x_max = min(max(x_list) + margin, w)
+            y_max = min(max(y_list) + margin, h)
 
             cv2.rectangle(
                 frame,
@@ -83,6 +85,9 @@ while True:
                 try:
                     label, confidence = predict(hand_image)
 
+                    if confidence < 0.70:
+                        label = "Unknown"
+
                     cv2.putText(
                         frame,
                         f"{label} ({confidence*100:.1f}%)",
@@ -93,8 +98,8 @@ while True:
                         2
                     )
 
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(e)
 
             cv2.putText(
                 frame,
