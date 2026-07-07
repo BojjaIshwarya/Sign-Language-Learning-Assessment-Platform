@@ -1,60 +1,34 @@
-import cv2
+import joblib
 import numpy as np
-from tensorflow.keras.models import load_model
 
-from ai.config import MODEL_PATH
+from config import MODEL_DIR
 
 
 # -----------------------------
 # Load model only once
 # -----------------------------
-model = load_model(MODEL_PATH)
+CLASSIFIER_PATH = MODEL_DIR / "landmark_classifier.pkl"
+ENCODER_PATH = MODEL_DIR / "label_encoder.pkl"
 
+classifier = joblib.load(CLASSIFIER_PATH)
+label_encoder = joblib.load(ENCODER_PATH)
 
-# -----------------------------
-# Class Labels
-# -----------------------------
-CLASS_NAMES = [
-    "A", "B", "C", "D", "E",
-    "F", "G", "H", "I", "J",
-    "K", "L", "M", "N", "O",
-    "P", "Q", "R", "S", "T",
-    "U", "V", "W", "X", "Y",
-    "Z", "del", "nothing", "space"
-]
-
-
-def preprocess_image(image):
+def predict(features):
     """
-    Preprocess image before prediction.
+    Predict ASL sign from landmark features.
+
+    Parameters:
+        features : list or numpy array of 63 normalized landmarks
     """
 
-    image = cv2.resize(image, (64, 64))
+    features = np.array(features).reshape(1, -1)
 
-    image = image.astype("float32") / 255.0
+    prediction = classifier.predict(features)[0]
 
-    image = np.expand_dims(image, axis=0)
+    probabilities = classifier.predict_proba(features)[0]
 
-    return image
+    confidence = float(np.max(probabilities))
 
-
-def predict(image):
-    """
-    Predict ASL sign.
-
-    Returns:
-        predicted_label
-        confidence
-    """
-
-    image = preprocess_image(image)
-
-    prediction = model.predict(image, verbose=0)[0]
-
-    class_index = np.argmax(prediction)
-
-    confidence = float(prediction[class_index])
-
-    label = CLASS_NAMES[class_index]
+    label = label_encoder.inverse_transform([prediction])[0]
 
     return label, confidence

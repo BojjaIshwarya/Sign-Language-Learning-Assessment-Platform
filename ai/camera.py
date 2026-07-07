@@ -3,6 +3,7 @@ import mediapipe as mp
 
 from ai.landmarks import get_finger_states
 from ai.predictor import predict
+from ai.assessment import assess_sign
 
 # -----------------------------
 # MediaPipe Hands
@@ -78,28 +79,47 @@ while True:
                 2
             )
 
-            hand_image = frame[y_min:y_max, x_min:x_max]
+            try:
 
-            if hand_image.size != 0:
+                wrist = hand_landmarks.landmark[0]
 
-                try:
-                    label, confidence = predict(hand_image)
+                features = []
 
-                    if confidence < 0.70:
-                        label = "Unknown"
+                for landmark in hand_landmarks.landmark:
 
-                    cv2.putText(
-                        frame,
-                        f"{label} ({confidence*100:.1f}%)",
-                        (x_min, y_min - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.8,
-                        (0, 255, 0),
-                        2
-                    )
+                    features.extend([
+                        landmark.x - wrist.x,
+                        landmark.y - wrist.y,
+                        landmark.z - wrist.z
+                    ])
 
-                except Exception as e:
-                    print(e)
+                label, confidence = predict(features)
+
+                expected_sign = "A"
+
+                assessment = assess_sign(
+                    expected_sign,
+                    label,
+                    confidence
+                )
+
+                print(assessment)
+
+                if confidence < 0.70:
+                    label = "Unknown"
+
+                cv2.putText(
+                    frame,
+                    f"{label} ({confidence*100:.1f}%)",
+                    (x_min, y_min - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.8,
+                    (0,255,0),
+                    2
+                )
+
+            except Exception as e:
+                print(e)
 
             cv2.putText(
                 frame,
