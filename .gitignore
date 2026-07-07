@@ -16,3 +16,4 @@ datasets/
 
 # Temporary files
 *.log
+ai/landmarks.csv
