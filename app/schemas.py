@@ -311,3 +311,19 @@ class AssessmentHistoryResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        
+# =====================================================
+# ASSESSMENT
+# =====================================================
+
+class AssessmentStartResponse(BaseModel):
+    lesson_id: int
+    expected_sign: str
+    status: str
+
+
+class AssessmentResultResponse(BaseModel):
+    expected_sign: str
+    predicted_sign: str
+    confidence: float
+    correct: bool

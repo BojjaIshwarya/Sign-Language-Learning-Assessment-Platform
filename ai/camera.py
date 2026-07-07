@@ -1,5 +1,6 @@
 import cv2
 import mediapipe as mp
+from collections import Counter, deque
 
 from ai.landmarks import get_finger_states
 from ai.predictor import predict
@@ -25,6 +26,8 @@ if not cap.isOpened():
     exit()
 
 print("Press 'q' to quit.")
+
+prediction_buffer = deque(maxlen=3)
 
 while True:
 
@@ -94,6 +97,9 @@ while True:
                     ])
 
                 label, confidence = predict(features)
+                
+                if confidence >= 0.70:
+                    prediction_buffer.append(label)
 
                 expected_sign = "A"
 
@@ -104,9 +110,9 @@ while True:
                 )
 
                 print(assessment)
-
-                if confidence < 0.70:
-                    label = "Unknown"
+                
+                if len(prediction_buffer) > 0:
+                    label = Counter(prediction_buffer).most_common(1)[0][0]
 
                 cv2.putText(
                     frame,

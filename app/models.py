@@ -384,13 +384,7 @@ class Lesson(Base):
     "LessonContent",
     back_populates="lesson",
     cascade="all, delete-orphan"
-    )  
-     
-    contents = relationship(
-    "LessonContent",
-    back_populates="lesson",
-    cascade="all, delete-orphan"
-    )
+    ) 
 # =====================================================
 # LESSON CONTENT MANAGEMENT
 # =====================================================

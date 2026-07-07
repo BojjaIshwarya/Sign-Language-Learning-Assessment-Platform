@@ -1,7 +1,7 @@
 import joblib
 import numpy as np
 
-from config import MODEL_DIR
+from ai.config import MODEL_DIR
 
 
 # -----------------------------
