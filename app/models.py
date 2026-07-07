@@ -232,6 +232,12 @@ class AssessmentHistory(Base):
     score = Column(Float)
 
     level = Column(String)
+    
+    expected_sign = Column(String)
+
+    predicted_sign = Column(String)
+
+    confidence = Column(Float)
 
     assessed_on = Column(
         DateTime,
