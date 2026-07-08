@@ -22,7 +22,21 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+class LoginUser(BaseModel):
+    id: int
+    name: str
+    email: EmailStr
+    role: str
 
+    class Config:
+        from_attributes = True
+
+
+class LoginResponse(BaseModel):
+    message: str
+    access_token: str
+    token_type: str
+    user: LoginUser
 # =====================================================
 # USER PROFILE MANAGEMENT
 # =====================================================
