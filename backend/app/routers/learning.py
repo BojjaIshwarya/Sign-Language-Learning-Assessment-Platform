@@ -337,3 +337,27 @@ def assessment_history(
         db,
         current_user
     )
+    
+@router.post(
+    "/lessons/{lesson_id}/complete",
+    response_model=schemas.LessonProgressResponse
+)
+def complete_lesson(
+    lesson_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    learner_profile = current_user.learner_profile
+
+    if learner_profile is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Learner profile not found"
+        )
+
+    return crud.complete_lesson(
+        db,
+        learner_profile.id,
+        lesson_id
+    )

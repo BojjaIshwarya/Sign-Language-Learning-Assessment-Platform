@@ -9,6 +9,8 @@ function LessonContent() {
     const { id } = useParams();
 
     const [contents, setContents] = useState([]);
+    
+    const [completed, setCompleted] = useState(false);
 
     useEffect(() => {
         loadContents();
@@ -21,6 +23,24 @@ function LessonContent() {
             const response = await api.get(`/courses/lessons/${id}/content`);
 
             setContents(response.data);
+
+        } catch (err) {
+
+            console.log(err);
+
+        }
+
+    };
+    
+    const markLessonCompleted = async () => {
+
+        try {
+
+            await api.post(`/learning/lessons/${id}/complete`);
+
+            setCompleted(true);
+
+            alert("Lesson marked as completed!");
 
         } catch (err) {
 
@@ -105,9 +125,25 @@ function LessonContent() {
 
                     )}
 
-                    <button className="btn btn-success btn-lg">
-                        Mark Lesson Completed
-                    </button>
+                    {completed ? (
+
+                        <button
+                            className="btn btn-secondary btn-lg"
+                            disabled
+                        >
+                                             ✓ Completed
+                        </button>
+
+                    ) : (
+
+                        <button
+                            className="btn btn-success btn-lg"
+                            onClick={markLessonCompleted}
+                        >
+                            Mark Lesson Completed
+                        </button>
+
+                    )}
 
                 </div>
 

@@ -481,3 +481,38 @@ class LearningPathCourse(Base):
     )
 
     course = relationship("Course")
+    
+# =====================================================
+# LESSON PROGRESS
+# =====================================================
+
+class LessonProgress(Base):
+    __tablename__ = "lesson_progress"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    learner_profile_id = Column(
+        Integer,
+        ForeignKey("learner_profiles.id"),
+        nullable=False
+    )
+
+    lesson_id = Column(
+        Integer,
+        ForeignKey("lessons.id"),
+        nullable=False
+    )
+
+    completed = Column(
+        String,
+        default="Yes"
+    )
+
+    completed_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+    learner_profile = relationship("LearnerProfile")
+
+    lesson = relationship("Lesson")

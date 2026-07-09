@@ -12,6 +12,7 @@ __pycache__/
 backend/venv/
 backend/venv_app/
 backend/uploads/
+backend/ai/landmarks.csv
 
 # ==========================
 # Frontend

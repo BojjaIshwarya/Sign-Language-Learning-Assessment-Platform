@@ -855,3 +855,25 @@ def get_learning_path_courses(
     ).filter(
         models.LearningPathCourse.learning_path_id == path_id
     ).all()
+    
+def complete_lesson(db, learner_profile_id, lesson_id):
+
+    progress = db.query(models.LessonProgress).filter(
+        models.LessonProgress.learner_profile_id == learner_profile_id,
+        models.LessonProgress.lesson_id == lesson_id
+    ).first()
+
+    if progress:
+        return progress
+
+    progress = models.LessonProgress(
+        learner_profile_id=learner_profile_id,
+        lesson_id=lesson_id,
+        completed="Yes"
+    )
+
+    db.add(progress)
+    db.commit()
+    db.refresh(progress)
+
+    return progress

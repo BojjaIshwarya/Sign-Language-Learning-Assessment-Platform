@@ -341,3 +341,17 @@ class AssessmentResultResponse(BaseModel):
     predicted_sign: str
     confidence: float
     correct: bool
+    
+# =====================================================
+# LESSON PROGRESS
+# =====================================================
+
+class LessonProgressResponse(BaseModel):
+    id: int
+    learner_profile_id: int
+    lesson_id: int
+    completed: str
+    completed_at: datetime
+
+    class Config:
+        from_attributes = True
