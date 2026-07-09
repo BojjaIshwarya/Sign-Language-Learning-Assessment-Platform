@@ -361,3 +361,27 @@ def complete_lesson(
         learner_profile.id,
         lesson_id
     )
+    
+@router.get(
+    "/course-progress/{course_id}",
+    response_model=schemas.CourseProgressResponse
+)
+def course_progress(
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    learner_profile = current_user.learner_profile
+
+    if learner_profile is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Learner profile not found"
+        )
+
+    return crud.get_course_progress(
+        db,
+        learner_profile.id,
+        course_id
+    )

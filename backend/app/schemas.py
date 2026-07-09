@@ -355,3 +355,12 @@ class LessonProgressResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        
+class CourseProgressResponse(BaseModel):
+    course_id: int
+    total_lessons: int
+    completed_lessons: int
+    progress_percentage: float
+
+    class Config:
+        from_attributes = True

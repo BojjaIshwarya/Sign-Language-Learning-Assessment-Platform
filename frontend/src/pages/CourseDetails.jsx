@@ -15,12 +15,15 @@ function CourseDetails() {
     
     const [lessons, setLessons] = useState([]);
     
+    const [progress, setProgress] = useState(null);
+    
     const navigate = useNavigate();
 
     useEffect(() => {
         loadCourse();
         loadModules();
         loadLessons();
+        loadProgress();
     }, []);
 
     const loadCourse = async () => {
@@ -49,6 +52,20 @@ function CourseDetails() {
             console.log(err);
         }
     };
+    
+    const loadProgress = async () => {
+        try {
+
+            const response = await api.get(`/learning/course-progress/${id}`);
+
+            setProgress(response.data);
+
+        } catch (err) {
+
+            console.log(err);
+
+        }
+    };
 
     if (!course) {
         return <h3 className="text-center mt-5">Loading...</h3>;
@@ -70,6 +87,38 @@ function CourseDetails() {
                     <span className="badge bg-primary">
                     {course.level}
                     </span>
+                    
+                    <hr />
+
+                    <h4>Course Progress</h4>
+
+                    {progress && (
+
+                        <>
+
+                            <div className="progress mb-2" style={{ height: "25px" }}>
+
+                                <div
+                                    className="progress-bar bg-success"
+                                    role="progressbar"
+                                    style={{
+                                        width: `${progress.progress_percentage}%`
+                                    }}
+                                >
+                                    {progress.progress_percentage}%
+                                </div>
+
+                            </div>
+
+                            <p>
+                                {progress.completed_lessons} / {progress.total_lessons} Lessons Completed
+                            </p>
+
+                        </>
+
+                    )}
+
+                    <hr />
 
                     <hr />
 

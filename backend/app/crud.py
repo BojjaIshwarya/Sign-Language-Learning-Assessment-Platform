@@ -877,3 +877,38 @@ def complete_lesson(db, learner_profile_id, lesson_id):
     db.refresh(progress)
 
     return progress
+    
+def get_course_progress(db, learner_profile_id, course_id):
+
+    total_lessons = db.query(models.Lesson).filter(
+        models.Lesson.course_id == course_id
+    ).count()
+
+    completed_lessons = (
+        db.query(models.LessonProgress)
+        .join(
+            models.Lesson,
+            models.Lesson.id == models.LessonProgress.lesson_id
+        )
+        .filter(
+            models.Lesson.course_id == course_id,
+            models.LessonProgress.learner_profile_id == learner_profile_id,
+            models.LessonProgress.completed == "Yes"
+        )
+        .count()
+    )
+
+    progress_percentage = 0
+
+    if total_lessons > 0:
+        progress_percentage = round(
+            (completed_lessons / total_lessons) * 100,
+            2
+        )
+
+    return {
+        "course_id": course_id,
+        "total_lessons": total_lessons,
+        "completed_lessons": completed_lessons,
+        "progress_percentage": progress_percentage
+    }
