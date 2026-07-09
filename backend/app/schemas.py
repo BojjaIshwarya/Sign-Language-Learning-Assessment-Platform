@@ -364,3 +364,11 @@ class CourseProgressResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        
+class LearningAnalyticsResponse(BaseModel):
+
+    courses_enrolled: int
+    lessons_completed: int
+    average_assessment_score: float
+    practice_sessions: int
+    current_level: str

@@ -1,11 +1,35 @@
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
+import { useEffect, useState } from "react";
+import api from "../services/api";
 
 function Dashboard() {
 
     const userData = localStorage.getItem("user");
 
     let user = null;
+    
+    const [analytics, setAnalytics] = useState(null);
+    
+    useEffect(() => {
+    loadAnalytics();
+}, []);
+
+    const loadAnalytics = async () => {
+
+        try {
+
+            const response = await api.get("/learning/analytics");
+
+            setAnalytics(response.data);
+
+        } catch (err) {
+
+            console.log(err);
+
+        }
+
+    };
 
     if (userData && userData !== "undefined") {
         try {
@@ -45,7 +69,7 @@ function Dashboard() {
 
                                     <h5>Lessons</h5>
 
-                                    <h2>0</h2>
+                                    <h2>{analytics?.lessons_completed ?? 0}</h2>
 
                                 </div>
 
@@ -61,7 +85,7 @@ function Dashboard() {
 
                                     <h5>Assessments</h5>
 
-                                    <h2>0</h2>
+                                    <h2>{analytics?.practice_sessions ?? 0}</h2>
 
                                 </div>
 
@@ -77,7 +101,7 @@ function Dashboard() {
 
                                     <h5>Accuracy</h5>
 
-                                    <h2>0%</h2>
+                                    <h2>{analytics?.average_assessment_score ?? 0}%</h2>
 
                                 </div>
 
@@ -93,7 +117,7 @@ function Dashboard() {
 
                                     <h5>Level</h5>
 
-                                    <h2>Beginner</h2>
+                                    <h2>{analytics?.current_level ?? "Beginner"}</h2>
 
                                 </div>
 

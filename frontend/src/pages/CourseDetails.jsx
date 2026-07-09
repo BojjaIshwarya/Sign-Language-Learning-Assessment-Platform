@@ -67,6 +67,7 @@ function CourseDetails() {
         }
     };
 
+
     if (!course) {
         return <h3 className="text-center mt-5">Loading...</h3>;
     }

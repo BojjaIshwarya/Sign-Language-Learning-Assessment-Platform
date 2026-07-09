@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from app import models, schemas
 from app.security import hash_password, verify_password
@@ -912,3 +913,42 @@ def get_course_progress(db, learner_profile_id, course_id):
         "completed_lessons": completed_lessons,
         "progress_percentage": progress_percentage
     }
+    
+from sqlalchemy import func
+
+def get_learning_analytics(db, learner_profile_id):
+
+    learner = db.query(models.LearnerProfile).filter(
+        models.LearnerProfile.id == learner_profile_id
+    ).first()
+
+    if learner is None:
+        return None
+
+    courses_enrolled = db.query(models.Course).count()
+
+    lessons_completed = db.query(models.LessonProgress).filter(
+        models.LessonProgress.learner_profile_id == learner_profile_id,
+        models.LessonProgress.completed == "Yes"
+    ).count()
+
+    average_score = db.query(
+        func.avg(models.AssessmentHistory.score)
+    ).filter(
+        models.AssessmentHistory.learner_profile_id == learner_profile_id
+    ).scalar()
+
+    if average_score is None:
+        average_score = 0
+
+    practice_sessions = db.query(models.PracticeHistory).filter(
+        models.PracticeHistory.learner_profile_id == learner_profile_id
+    ).count()
+
+    return {
+        "courses_enrolled": courses_enrolled,
+        "lessons_completed": lessons_completed,
+        "average_assessment_score": round(average_score, 2),
+        "practice_sessions": practice_sessions,
+        "current_level": learner.learning_level
+    }    

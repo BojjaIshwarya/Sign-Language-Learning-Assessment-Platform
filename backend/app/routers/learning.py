@@ -385,3 +385,25 @@ def course_progress(
         learner_profile.id,
         course_id
     )
+    
+@router.get(
+    "/analytics",
+    response_model=schemas.LearningAnalyticsResponse
+)
+def learning_analytics(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    learner_profile = current_user.learner_profile
+
+    if learner_profile is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Learner profile not found"
+        )
+
+    return crud.get_learning_analytics(
+        db,
+        learner_profile.id
+    )
