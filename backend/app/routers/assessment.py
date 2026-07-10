@@ -42,6 +42,27 @@ async def predict_sign(
     
     score = 100 if expected_sign == predicted_sign else 0
 
+    if predicted_sign == expected_sign:
+
+        if confidence >= 95:
+
+            feedback = "Excellent! Your sign is highly accurate."
+
+        elif confidence >= 80:
+
+            feedback = "Good job! Practice a little more for better accuracy."
+
+        else:
+
+            feedback = "Correct sign detected, but confidence is low. Keep practicing."
+
+    else:
+
+        feedback = (
+        f"Incorrect sign detected. Expected '{expected_sign}', "
+        f"but recognized '{predicted_sign}'. Please practice this lesson again."
+    )
+    
     assessment = models.AssessmentHistory(
         learner_profile_id=learner_profile_id,
         assessment_name="Alphabet Assessment",
@@ -49,7 +70,8 @@ async def predict_sign(
         level="Beginner",
         expected_sign=expected_sign,
         predicted_sign=predicted_sign,
-        confidence=confidence
+        confidence=confidence,
+        feedback=feedback
     )
 
     db.add(assessment)
@@ -62,5 +84,6 @@ async def predict_sign(
         "expected_sign": expected_sign,
         "predicted_sign": predicted_sign,
         "confidence": round(confidence, 4),
-        "correct": expected_sign == predicted_sign
+        "correct": expected_sign == predicted_sign,
+        "feedback": feedback,
     }

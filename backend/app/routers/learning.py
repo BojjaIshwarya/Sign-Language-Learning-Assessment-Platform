@@ -429,3 +429,25 @@ def lesson_recommendation(
         db,
         learner_profile.id
     )
+    
+@router.get(
+    "/skill-mastery",
+    response_model=list[schemas.SkillMasteryResponse]
+)
+def skill_mastery(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    learner_profile = current_user.learner_profile
+
+    if learner_profile is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Learner profile not found"
+        )
+
+    return crud.get_skill_mastery(
+        db,
+        learner_profile.id
+    )

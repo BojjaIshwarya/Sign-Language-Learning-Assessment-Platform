@@ -238,6 +238,8 @@ class AssessmentHistory(Base):
     predicted_sign = Column(String)
 
     confidence = Column(Float)
+    
+    feedback = Column(String)
 
     assessed_on = Column(
         DateTime,

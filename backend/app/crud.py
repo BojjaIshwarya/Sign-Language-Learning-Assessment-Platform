@@ -35,6 +35,18 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    
+    # Automatically create learner profile
+    if db_user.role == "Learner":
+
+        learner_profile = models.LearnerProfile(
+            user_id=db_user.id,
+            learning_level="Beginner",
+            preferred_language="English"
+        )
+
+        db.add(learner_profile)
+        db.commit()
 
     return db_user
 
@@ -876,6 +888,33 @@ def complete_lesson(db, learner_profile_id, lesson_id):
     db.add(progress)
     db.commit()
     db.refresh(progress)
+    
+    lesson = db.query(models.Lesson).filter(
+        models.Lesson.id == lesson_id
+    ).first()
+
+    skill = db.query(models.Skill).filter(
+        models.Skill.learner_profile_id == learner_profile_id,
+        models.Skill.skill_name == lesson.title
+    ).first()
+
+    if skill:
+
+        skill.mastery_percentage = 100
+        skill.skill_level = "Advanced"
+
+    else:
+
+        skill = models.Skill(
+            learner_profile_id=learner_profile_id,
+            skill_name=lesson.title,
+            mastery_percentage=100,
+            skill_level="Advanced"
+        )
+
+        db.add(skill)
+
+    db.commit()
 
     return progress
     
@@ -981,3 +1020,11 @@ def get_lesson_recommendation(db, learner_profile_id):
         "lesson_title": "No lessons remaining",
         "reason": "Congratulations! You have completed all available lessons."
     }
+    
+def get_skill_mastery(db, learner_profile_id):
+
+    skills = db.query(models.Skill).filter(
+        models.Skill.learner_profile_id == learner_profile_id
+    ).all()
+
+    return skills

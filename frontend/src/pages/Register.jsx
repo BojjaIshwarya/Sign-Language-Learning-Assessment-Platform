@@ -79,6 +79,16 @@ function Register() {
                                 name="password"
                                 onChange={handleChange}
                             />
+                            
+                            <select
+                                className="form-select mb-3"
+                                name="role"
+                                value={form.role}
+                                onChange={handleChange}
+                            >
+                                <option value="Learner">Learner</option>
+                                <option value="Instructor">Instructor</option>
+                            </select>
 
                             <button className="btn btn-success w-100">
                                 Register

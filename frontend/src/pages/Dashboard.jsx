@@ -22,10 +22,12 @@ function Dashboard() {
 
     const [analytics, setAnalytics] = useState(null);
     const [recommendation, setRecommendation] = useState(null);
+    const [skills, setSkills] = useState([]);
 
     useEffect(() => {
         loadAnalytics();
         loadRecommendation();
+         loadSkills();
     }, []);
 
     const loadAnalytics = async () => {
@@ -51,6 +53,22 @@ function Dashboard() {
             const response = await api.get("/learning/recommendation");
 
             setRecommendation(response.data);
+
+        } catch (err) {
+
+            console.log(err);
+
+        }
+
+    };
+    
+    const loadSkills = async () => {
+
+        try {
+
+            const response = await api.get("/learning/skill-mastery");
+
+            setSkills(response.data);
 
         } catch (err) {
 
@@ -201,6 +219,60 @@ function Dashboard() {
                         </div>
 
                     </div>
+                    
+                    <div className="row mt-4">
+
+                        <div className="col-md-12">
+
+                            <div className="card shadow">
+
+                                <div className="card-body">
+
+                                    <h4>🏆 Skill Mastery</h4>
+
+                                    {skills.length === 0 ? (
+
+                                        <p>No skills available.</p>
+
+                                    ) : (
+
+                                        skills.map((skill) => (
+
+                                            <div key={skill.skill_name} className="mb-3">
+
+                                                <div className="d-flex justify-content-between">
+
+                                                    <strong>{skill.skill_name}</strong>
+
+                                                    <span>{skill.mastery_percentage}%</span>
+
+                                                </div>
+
+                                                <div className="progress">
+
+                                                    <div
+                                                        className="progress-bar bg-success"
+                                                            role="progressbar"
+                                                            style={{ width: `${skill.mastery_percentage}%` }}
+                                                    >
+                                                        {skill.skill_level}
+                                                    </div>
+
+                                                </div>
+
+                                            </div>
+
+                                        ))
+
+                                    )}
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div> 
 
                 </div>
 

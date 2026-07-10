@@ -321,6 +321,7 @@ class AssessmentHistoryResponse(BaseModel):
     assessment_name: str
     score: float
     level: str
+    feedback: str | None = None
     assessed_on: datetime
 
     class Config:
@@ -378,3 +379,9 @@ class LessonRecommendationResponse(BaseModel):
     lesson_id: int
     lesson_title: str
     reason: str
+    
+class SkillMasteryResponse(BaseModel):
+
+    skill_name: str
+    mastery_percentage: float
+    skill_level: str
