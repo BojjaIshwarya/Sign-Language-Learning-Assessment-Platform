@@ -1,19 +1,32 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import { useEffect, useState } from "react";
 import api from "../services/api";
 
 function Dashboard() {
 
+    const navigate = useNavigate();
+
     const userData = localStorage.getItem("user");
 
     let user = null;
-    
+
+    if (userData && userData !== "undefined") {
+        try {
+            user = JSON.parse(userData);
+        } catch (e) {
+            console.error("Invalid user data:", userData);
+        }
+    }
+
     const [analytics, setAnalytics] = useState(null);
-    
+    const [recommendation, setRecommendation] = useState(null);
+
     useEffect(() => {
-    loadAnalytics();
-}, []);
+        loadAnalytics();
+        loadRecommendation();
+    }, []);
 
     const loadAnalytics = async () => {
 
@@ -31,13 +44,21 @@ function Dashboard() {
 
     };
 
-    if (userData && userData !== "undefined") {
+    const loadRecommendation = async () => {
+
         try {
-            user = JSON.parse(userData);
-        } catch (e) {
-            console.error("Invalid user data:", userData);
+
+            const response = await api.get("/learning/recommendation");
+
+            setRecommendation(response.data);
+
+        } catch (err) {
+
+            console.log(err);
+
         }
-    }
+
+    };
 
     return (
 
@@ -65,7 +86,7 @@ function Dashboard() {
 
                             <div className="card shadow">
 
-                                <div className="card-body">
+                                <div className="card-body text-center">
 
                                     <h5>Lessons</h5>
 
@@ -81,9 +102,9 @@ function Dashboard() {
 
                             <div className="card shadow">
 
-                                <div className="card-body">
+                                <div className="card-body text-center">
 
-                                    <h5>Assessments</h5>
+                                    <h5>Practice Sessions</h5>
 
                                     <h2>{analytics?.practice_sessions ?? 0}</h2>
 
@@ -97,7 +118,7 @@ function Dashboard() {
 
                             <div className="card shadow">
 
-                                <div className="card-body">
+                                <div className="card-body text-center">
 
                                     <h5>Accuracy</h5>
 
@@ -113,11 +134,65 @@ function Dashboard() {
 
                             <div className="card shadow">
 
-                                <div className="card-body">
+                                <div className="card-body text-center">
 
                                     <h5>Level</h5>
 
                                     <h2>{analytics?.current_level ?? "Beginner"}</h2>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div className="row mt-4">
+
+                        <div className="col-md-12">
+
+                            <div className="card shadow">
+
+                                <div className="card-body">
+
+                                    <h4>📚 Recommended Next Lesson</h4>
+
+                                    {recommendation ? (
+
+                                        <>
+
+                                            <h5>{recommendation.lesson_title}</h5>
+
+                                            <p>{recommendation.reason}</p>
+
+                                            {recommendation.lesson_id !== 0 ? (
+
+                                                <button
+                                                    className="btn btn-success"
+                                                    onClick={() => navigate(`/lessons/${recommendation.lesson_id}`)}
+                                                >
+                                                    Start Learning
+                                                </button>
+
+                                            ) : (
+
+                                                <button
+                                                    className="btn btn-primary"
+                                                    onClick={() => navigate("/assessment")}
+                                                >
+                                                    Practice Assessment
+                                                </button>
+
+                                            )}
+
+                                        </>
+
+                                    ) : (
+
+                                        <p>Loading recommendation...</p>
+
+                                    )}
 
                                 </div>
 

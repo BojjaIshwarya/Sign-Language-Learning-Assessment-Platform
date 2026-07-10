@@ -372,3 +372,9 @@ class LearningAnalyticsResponse(BaseModel):
     average_assessment_score: float
     practice_sessions: int
     current_level: str
+    
+class LessonRecommendationResponse(BaseModel):
+
+    lesson_id: int
+    lesson_title: str
+    reason: str

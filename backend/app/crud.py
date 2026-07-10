@@ -952,3 +952,32 @@ def get_learning_analytics(db, learner_profile_id):
         "practice_sessions": practice_sessions,
         "current_level": learner.learning_level
     }    
+    
+def get_lesson_recommendation(db, learner_profile_id):
+
+    completed_lessons = db.query(
+        models.LessonProgress.lesson_id
+    ).filter(
+        models.LessonProgress.learner_profile_id == learner_profile_id,
+        models.LessonProgress.completed == "Yes"
+    )
+
+    lesson = db.query(models.Lesson).filter(
+        ~models.Lesson.id.in_(completed_lessons)
+    ).order_by(
+        models.Lesson.lesson_order
+    ).first()
+
+    if lesson:
+
+        return {
+            "lesson_id": lesson.id,
+            "lesson_title": lesson.title,
+            "reason": "Next incomplete lesson."
+        }
+
+    return {
+        "lesson_id": 0,
+        "lesson_title": "No lessons remaining",
+        "reason": "Congratulations! You have completed all available lessons."
+    }
