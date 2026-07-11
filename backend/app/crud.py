@@ -512,6 +512,13 @@ def create_assessment_history(
     db.add(db_assessment)
     db.commit()
     db.refresh(db_assessment)
+    
+    notify_user(
+        db,
+        current_user.id,
+        "Assessment Completed",
+        f"You scored {assessment.score}% in {assessment.assessment_name}."
+    )
 
     return db_assessment
     
@@ -915,6 +922,17 @@ def complete_lesson(db, learner_profile_id, lesson_id):
         db.add(skill)
 
     db.commit()
+    
+    learner = db.query(models.LearnerProfile).filter(
+        models.LearnerProfile.id == learner_profile_id
+    ).first()
+
+    notify_user(
+        db,
+        learner.user_id,
+        "Lesson Completed",
+        f"You completed '{lesson.title}'."
+    )
 
     return progress
     
@@ -1028,3 +1046,588 @@ def get_skill_mastery(db, learner_profile_id):
     ).all()
 
     return skills
+    
+def get_instructor_dashboard(db: Session):
+
+    return {
+        "total_courses": db.query(models.Course).count(),
+        "total_modules": db.query(models.CourseModule).count(),
+        "total_lessons": db.query(models.Lesson).count(),
+        "total_contents": db.query(models.LessonContent).count()
+    }
+    
+# ==========================================
+# ADMIN DASHBOARD
+# ==========================================
+
+def get_admin_dashboard(db: Session):
+
+    average_score = db.query(
+        func.avg(models.AssessmentHistory.score)
+    ).scalar()
+
+    if average_score is None:
+        average_score = 0
+
+    return {
+        "total_users": db.query(models.User).count(),
+        "total_learners": db.query(models.User).filter(
+            models.User.role == "Learner"
+        ).count(),
+        "total_instructors": db.query(models.User).filter(
+            models.User.role == "Instructor"
+        ).count(),
+        "total_trainers": db.query(models.User).filter(
+            models.User.role == "Accessibility Trainer"
+        ).count(),
+        "total_courses": db.query(models.Course).count(),
+        "total_lessons": db.query(models.Lesson).count(),
+        "total_assessments": db.query(models.AssessmentHistory).count(),
+        "average_score": round(average_score, 2)
+    }
+    
+def get_all_users(db: Session):
+
+    return db.query(models.User).all()
+    
+def get_user(db: Session, user_id: int):
+
+    return db.query(models.User).filter(
+        models.User.id == user_id
+    ).first()
+    
+def admin_update_user(
+    db: Session,
+    user_id: int,
+    user_data
+):
+
+    user = get_user(db, user_id)
+
+    if user is None:
+        return None
+
+    update_data = user_data.model_dump(exclude_unset=True)
+
+    for key, value in update_data.items():
+        setattr(user, key, value)
+
+    db.commit()
+    db.refresh(user)
+
+    return user
+    
+def admin_delete_user(
+    db: Session,
+    user_id: int
+):
+
+    user = get_user(db, user_id)
+
+    if user is None:
+        return False
+
+    db.delete(user)
+    db.commit()
+
+    return True
+    
+def get_admin_analytics(db: Session):
+
+    average_score = db.query(
+        func.avg(models.AssessmentHistory.score)
+    ).scalar()
+
+    if average_score is None:
+        average_score = 0
+
+    return {
+        "daily_active_users": db.query(models.User).count(),
+        "weekly_active_users": db.query(models.User).count(),
+        "monthly_active_users": db.query(models.User).count(),
+        "average_assessment_score": round(average_score, 2),
+        "completed_lessons": db.query(
+            models.LessonProgress
+        ).filter(
+            models.LessonProgress.completed == "Yes"
+        ).count()
+    }
+    
+# =====================================================
+# TRAINER ASSIGNMENT
+# =====================================================
+
+def assign_learner_to_trainer(
+    db: Session,
+    trainer_id: int,
+    learner_profile_id: int
+):
+
+    trainer = db.query(models.User).filter(
+        models.User.id == trainer_id,
+        models.User.role == "Trainer"
+    ).first()
+
+    if trainer is None:
+        return None
+
+    learner = db.query(models.LearnerProfile).filter(
+        models.LearnerProfile.id == learner_profile_id
+    ).first()
+
+    if learner is None:
+        return None
+
+    existing = db.query(models.TrainerAssignment).filter(
+        models.TrainerAssignment.learner_profile_id == learner_profile_id
+    ).first()
+
+    if existing:
+        return existing
+
+    assignment = models.TrainerAssignment(
+        trainer_id=trainer_id,
+        learner_profile_id=learner_profile_id
+    )
+
+    db.add(assignment)
+    db.commit()
+    db.refresh(assignment)
+
+    return assignment
+    
+def get_trainer_learners(
+    db: Session,
+    trainer_id: int
+):
+
+    return db.query(models.TrainerAssignment).filter(
+        models.TrainerAssignment.trainer_id == trainer_id
+    ).all()
+    
+def get_trainer_dashboard(db: Session, trainer_id: int):
+
+    assignments = db.query(models.TrainerAssignment).filter(
+        models.TrainerAssignment.trainer_id == trainer_id
+    ).all()
+
+    learner_ids = [a.learner_profile_id for a in assignments]
+
+    total_learners = len(learner_ids)
+
+    total_assessments = db.query(models.AssessmentHistory).filter(
+        models.AssessmentHistory.learner_profile_id.in_(learner_ids)
+    ).count()
+
+    average_score = db.query(
+        func.avg(models.AssessmentHistory.score)
+    ).filter(
+        models.AssessmentHistory.learner_profile_id.in_(learner_ids)
+    ).scalar()
+
+    if average_score is None:
+        average_score = 0
+
+    return {
+        "total_assigned_learners": total_learners,
+        "total_completed_assessments": total_assessments,
+        "average_score": round(average_score, 2)
+    }
+    
+def get_trainer_learner_progress(
+    db: Session,
+    trainer_id: int
+):
+
+    assignments = db.query(models.TrainerAssignment).filter(
+        models.TrainerAssignment.trainer_id == trainer_id
+    ).all()
+
+    result = []
+
+    for assignment in assignments:
+
+        learner = assignment.learner_profile
+
+        completed_lessons = db.query(models.LessonProgress).filter(
+            models.LessonProgress.learner_profile_id == learner.id,
+            models.LessonProgress.completed == "Yes"
+        ).count()
+
+        total_assessments = db.query(models.AssessmentHistory).filter(
+            models.AssessmentHistory.learner_profile_id == learner.id
+        ).count()
+
+        average_score = db.query(
+            func.avg(models.AssessmentHistory.score)
+        ).filter(
+            models.AssessmentHistory.learner_profile_id == learner.id
+        ).scalar()
+
+        if average_score is None:
+            average_score = 0
+
+        result.append({
+            "learner_name": learner.user.name,
+            "total_completed_lessons": completed_lessons,
+            "total_assessments": total_assessments,
+            "average_score": round(average_score, 2)
+        })
+
+    return result
+    
+def create_trainer_feedback(
+    db: Session,
+    trainer_id: int,
+    feedback_data: schemas.TrainerFeedbackCreate
+):
+
+    feedback = models.TrainerFeedback(
+        trainer_id=trainer_id,
+        learner_profile_id=feedback_data.learner_profile_id,
+        feedback=feedback_data.feedback
+    )
+
+    db.add(feedback)
+    db.commit()
+    db.refresh(feedback)
+    
+    learner = db.query(models.LearnerProfile).filter(
+        models.LearnerProfile.id == feedback_data.learner_profile_id
+    ).first()
+    
+    notify_user(
+        db,
+        learner.user_id,
+        "Trainer Feedback",
+        "Your trainer has provided feedback on your assessment."
+    )
+
+    return feedback
+    
+def get_learner_feedback(
+    db: Session,
+    learner_profile_id: int
+):
+
+    return db.query(models.TrainerFeedback).filter(
+        models.TrainerFeedback.learner_profile_id == learner_profile_id
+    ).order_by(
+        models.TrainerFeedback.created_at.desc()
+    ).all()
+    
+def update_trainer_feedback(
+    db: Session,
+    trainer_id: int,
+    feedback_id: int,
+    feedback_text: str
+):
+
+    feedback = db.query(models.TrainerFeedback).filter(
+        models.TrainerFeedback.id == feedback_id,
+        models.TrainerFeedback.trainer_id == trainer_id
+    ).first()
+
+    if feedback is None:
+        return None
+
+    feedback.feedback = feedback_text
+
+    db.commit()
+    db.refresh(feedback)
+
+    return feedback
+    
+def delete_trainer_feedback(
+    db: Session,
+    trainer_id: int,
+    feedback_id: int
+):
+
+    feedback = db.query(models.TrainerFeedback).filter(
+        models.TrainerFeedback.id == feedback_id,
+        models.TrainerFeedback.trainer_id == trainer_id
+    ).first()
+
+    if feedback is None:
+        return False
+
+    db.delete(feedback)
+    db.commit()
+
+    return True
+    
+import uuid
+
+# =====================================================
+# CERTIFICATES
+# =====================================================
+
+def generate_certificate(
+    db: Session,
+    learner_profile_id: int,
+    course_id: int
+):
+
+    # Check if certificate already exists
+    existing = db.query(models.Certificate).filter(
+        models.Certificate.learner_profile_id == learner_profile_id,
+        models.Certificate.course_id == course_id
+    ).first()
+
+    if existing:
+        return existing
+
+    certificate = models.Certificate(
+        learner_profile_id=learner_profile_id,
+        course_id=course_id,
+        certificate_number=str(uuid.uuid4())[:12].upper()
+    )
+
+    db.add(certificate)
+    db.commit()
+    db.refresh(certificate)
+    
+    learner = db.query(models.LearnerProfile).filter(
+        models.LearnerProfile.id == learner_profile_id
+    ).first()
+
+    notify_user(
+        db,
+        learner.user_id,
+        "Certificate Generated",
+        "Congratulations! Your certificate has been generated successfully."
+    )
+
+    return certificate
+    
+def get_certificates(
+    db: Session,
+    learner_profile_id: int
+):
+
+    return db.query(models.Certificate).filter(
+        models.Certificate.learner_profile_id == learner_profile_id
+    ).all()
+    
+def verify_certificate(
+    db: Session,
+    certificate_number: str
+):
+
+    return db.query(models.Certificate).filter(
+        models.Certificate.certificate_number == certificate_number
+    ).first()
+    
+def generate_learning_report(
+    db: Session,
+    learner_profile_id: int
+):
+
+    learner = db.query(models.LearnerProfile).filter(
+        models.LearnerProfile.id == learner_profile_id
+    ).first()
+
+    completed_lessons = db.query(models.LessonProgress).filter(
+        models.LessonProgress.learner_profile_id == learner_profile_id,
+        models.LessonProgress.completed == "Yes"
+    ).count()
+
+    average_score = db.query(
+        func.avg(models.AssessmentHistory.score)
+    ).filter(
+        models.AssessmentHistory.learner_profile_id == learner_profile_id
+    ).scalar() or 0
+
+    practice_sessions = db.query(models.PracticeHistory).filter(
+        models.PracticeHistory.learner_profile_id == learner_profile_id
+    ).count()
+
+    certificates = db.query(models.Certificate).filter(
+        models.Certificate.learner_profile_id == learner_profile_id
+    ).count()
+
+    return {
+        "learner_name": learner.user.name,
+        "completed_lessons": completed_lessons,
+        "average_score": round(average_score, 2),
+        "practice_sessions": practice_sessions,
+        "certificates": certificates
+    }
+    
+# =====================================================
+# NOTIFICATIONS
+# =====================================================
+
+def create_notification(
+    db: Session,
+    notification: schemas.NotificationCreate
+):
+
+    db_notification = models.Notification(
+        user_id=notification.user_id,
+        title=notification.title,
+        message=notification.message
+    )
+
+    db.add(db_notification)
+    db.commit()
+    db.refresh(db_notification)
+
+    return db_notification
+
+
+def get_notifications(
+    db: Session,
+    current_user
+):
+
+    return (
+        db.query(models.Notification)
+        .filter(
+            models.Notification.user_id == current_user.id
+        )
+        .order_by(
+            models.Notification.created_at.desc()
+        )
+        .all()
+    )
+
+
+def mark_notification_as_read(
+    db: Session,
+    notification_id: int,
+    current_user
+):
+
+    notification = (
+        db.query(models.Notification)
+        .filter(
+            models.Notification.id == notification_id,
+            models.Notification.user_id == current_user.id
+        )
+        .first()
+    )
+
+    if notification is None:
+        return None
+
+    notification.is_read = True
+
+    db.commit()
+    db.refresh(notification)
+
+    return notification
+
+
+def delete_notification(
+    db: Session,
+    notification_id: int,
+    current_user
+):
+
+    notification = (
+        db.query(models.Notification)
+        .filter(
+            models.Notification.id == notification_id,
+            models.Notification.user_id == current_user.id
+        )
+        .first()
+    )
+
+    if notification is None:
+        return False
+
+    db.delete(notification)
+    db.commit()
+
+    return True
+    
+def notify_user(
+    db: Session,
+    user_id: int,
+    title: str,
+    message: str
+):
+
+    notification = models.Notification(
+        user_id=user_id,
+        title=title,
+        message=message
+    )
+
+    db.add(notification)
+    db.commit()
+    db.refresh(notification)
+
+    return notification
+    
+def create_announcement(
+    db: Session,
+    current_user,
+    announcement: schemas.AnnouncementCreate
+):
+
+    db_announcement = models.Announcement(
+        title=announcement.title,
+        message=announcement.message,
+        created_by=current_user.id
+    )
+
+    db.add(db_announcement)
+    db.commit()
+    db.refresh(db_announcement)
+
+    return db_announcement
+    
+def get_announcements(db: Session):
+
+    return db.query(
+        models.Announcement
+    ).order_by(
+        models.Announcement.created_at.desc()
+    ).all()
+    
+def update_announcement(
+    db: Session,
+    announcement_id: int,
+    announcement: schemas.AnnouncementUpdate
+):
+
+    db_announcement = db.query(
+        models.Announcement
+    ).filter(
+        models.Announcement.id == announcement_id
+    ).first()
+
+    if db_announcement is None:
+        return None
+
+    update_data = announcement.model_dump(exclude_unset=True)
+
+    for key, value in update_data.items():
+        setattr(db_announcement, key, value)
+
+    db.commit()
+    db.refresh(db_announcement)
+
+    return db_announcement
+    
+def delete_announcement(
+    db: Session,
+    announcement_id: int
+):
+
+    announcement = db.query(
+        models.Announcement
+    ).filter(
+        models.Announcement.id == announcement_id
+    ).first()
+
+    if announcement is None:
+        return False
+
+    db.delete(announcement)
+    db.commit()
+
+    return True

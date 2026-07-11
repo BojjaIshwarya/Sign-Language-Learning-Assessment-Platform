@@ -451,3 +451,98 @@ def skill_mastery(
         db,
         learner_profile.id
     )
+    
+# =====================================================
+# LEARNING PATH MANAGEMENT
+# =====================================================
+
+@router.post(
+    "/paths",
+    response_model=schemas.LearningPathResponse
+)
+def create_learning_path(
+    path: schemas.LearningPathCreate,
+    db: Session = Depends(get_db)
+):
+
+    return crud.create_learning_path(
+        db,
+        path
+    )
+
+
+@router.get(
+    "/paths",
+    response_model=list[schemas.LearningPathResponse]
+)
+def get_learning_paths(
+    db: Session = Depends(get_db)
+):
+
+    return crud.get_learning_paths(
+        db
+    )
+
+
+@router.put(
+    "/paths/{path_id}",
+    response_model=schemas.LearningPathResponse
+)
+def update_learning_path(
+    path_id: int,
+    path: schemas.LearningPathUpdate,
+    db: Session = Depends(get_db)
+):
+
+    updated_path = crud.update_learning_path(
+        db,
+        path_id,
+        path
+    )
+
+    if updated_path is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Learning Path not found"
+        )
+
+    return updated_path
+
+
+@router.delete("/paths/{path_id}")
+def delete_learning_path(
+    path_id: int,
+    db: Session = Depends(get_db)
+):
+
+    success = crud.delete_learning_path(
+        db,
+        path_id
+    )
+
+    if not success:
+        raise HTTPException(
+            status_code=404,
+            detail="Learning Path not found"
+        )
+
+    return {
+        "message": "Learning Path deleted successfully."
+    }
+    
+@router.get(
+    "/instructor/dashboard",
+    response_model=schemas.InstructorDashboardResponse
+)
+def instructor_dashboard(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    if current_user.role != "Instructor":
+        raise HTTPException(
+            status_code=403,
+            detail="Only instructors can access this dashboard."
+        )
+
+    return crud.get_instructor_dashboard(db)

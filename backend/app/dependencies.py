@@ -59,3 +59,14 @@ def get_current_user(
             status_code=401,
             detail="Invalid token"
         )
+        
+def get_current_admin(
+    current_user=Depends(get_current_user)
+):
+    if current_user.role != "Administrator":
+        raise HTTPException(
+            status_code=403,
+            detail="Administrator access required."
+        )
+
+    return current_user

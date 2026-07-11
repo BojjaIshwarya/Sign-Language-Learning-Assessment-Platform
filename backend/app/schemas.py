@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional
 from datetime import datetime
 
@@ -385,3 +385,193 @@ class SkillMasteryResponse(BaseModel):
     skill_name: str
     mastery_percentage: float
     skill_level: str
+    
+# =====================================================
+# INSTRUCTOR DASHBOARD
+# =====================================================
+
+class InstructorDashboardResponse(BaseModel):
+    total_courses: int
+    total_modules: int
+    total_lessons: int
+    total_contents: int
+    
+# =====================================================
+# ADMIN
+# =====================================================
+
+class AdminDashboardResponse(BaseModel):
+    total_users: int
+    total_learners: int
+    total_instructors: int
+    total_trainers: int
+    total_courses: int
+    total_lessons: int
+    total_assessments: int
+    average_score: float
+
+
+class AdminUserResponse(BaseModel):
+    id: int
+    name: str
+    email: EmailStr
+    role: str
+
+    class Config:
+        from_attributes = True
+
+
+class AdminAnalyticsResponse(BaseModel):
+    daily_active_users: int
+    weekly_active_users: int
+    monthly_active_users: int
+    average_assessment_score: float
+    completed_lessons: int
+    
+# ==========================================
+# ADMIN
+# ==========================================
+
+class AdminUserUpdate(BaseModel):
+    name: str | None = None
+    email: EmailStr | None = None
+    role: str | None = None
+    
+# =====================================================
+# TRAINER MANAGEMENT
+# =====================================================
+
+class TrainerDashboardResponse(BaseModel):
+    total_assigned_learners: int
+    total_completed_assessments: int
+    average_score: float
+
+
+class AssignedLearnerResponse(BaseModel):
+    id: int
+    name: str
+    email: EmailStr
+    learning_level: str
+
+    class Config:
+        from_attributes = True
+
+
+class TrainerFeedbackCreate(BaseModel):
+    learner_profile_id: int
+    feedback: str
+
+
+class TrainerFeedbackResponse(BaseModel):
+    learner_name: str
+    feedback: str
+    
+# =====================================================
+# TRAINER
+# =====================================================
+
+class TrainerAssignmentCreate(BaseModel):
+    trainer_id: int
+    learner_profile_id: int
+
+
+class TrainerAssignmentResponse(BaseModel):
+    id: int
+    trainer_id: int
+    learner_profile_id: int
+    assigned_at: datetime
+
+    class Config:
+        from_attributes = True
+        
+# =====================================================
+# TRAINER LEARNER PROGRESS
+# =====================================================
+
+class TrainerLearnerProgressResponse(BaseModel):
+    learner_name: str
+    total_completed_lessons: int
+    total_assessments: int
+    average_score: float
+    
+# =====================================================
+# TRAINER FEEDBACK
+# =====================================================
+
+class TrainerFeedbackCreate(BaseModel):
+    learner_profile_id: int
+    feedback: str
+
+
+class TrainerFeedbackResponse(BaseModel):
+    id: int
+    trainer_id: int
+    learner_profile_id: int
+    feedback: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+        
+# =====================================================
+# CERTIFICATES
+# =====================================================
+
+class CertificateResponse(BaseModel):
+    id: int
+    learner_profile_id: int
+    course_id: int
+    certificate_number: str
+    issued_at: datetime
+
+    class Config:
+        from_attributes = True
+        
+# =====================================================
+# LEARNING REPORT
+# =====================================================
+
+class LearningReportResponse(BaseModel):
+    learner_name: str
+    completed_lessons: int
+    average_score: float
+    practice_sessions: int
+    certificates: int
+    
+# =====================================================
+# NOTIFICATIONS
+# =====================================================
+
+class NotificationCreate(BaseModel):
+    user_id: int
+    title: str
+    message: str
+
+
+class NotificationResponse(BaseModel):
+    id: int
+    user_id: int
+    title: str
+    message: str
+    is_read: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+        
+class AnnouncementCreate(BaseModel):
+    title: str
+    message: str
+    
+class AnnouncementUpdate(BaseModel):
+    title: str | None = None
+    message: str | None = None 
+    
+class AnnouncementResponse(BaseModel):
+    id: int
+    title: str
+    message: str
+    created_by: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)   

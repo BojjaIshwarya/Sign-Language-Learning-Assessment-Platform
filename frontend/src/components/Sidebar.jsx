@@ -35,6 +35,15 @@ function Sidebar() {
                         Learning
                     </Link>
                 </li>
+                
+                <li className="nav-item mb-3">
+                    <Link
+                        className="nav-link text-white"
+                        to="/learning-paths"
+                    >
+                        Learning Paths
+                    </Link>
+                </li>
 
                 <li className="nav-item mb-3">
                     <Link

@@ -10,6 +10,7 @@ import History from "./pages/History";
 import Profile from "./pages/Profile";
 import CourseDetails from "./pages/CourseDetails";
 import LessonContent from "./pages/LessonContent";
+import LearningPaths from "./pages/LearningPaths";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
       <Route path="/profile" element={<Profile />} />
       <Route path="/courses/:id" element={<CourseDetails />} />
       <Route path="/lessons/:id" element={<LessonContent />} />
+      <Route path="/learning-paths" element={<LearningPaths />} />
     </Routes>
   );
 }

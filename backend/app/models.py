@@ -7,7 +7,8 @@ from sqlalchemy import (
     Float,
     Text,
     DateTime,
-    ForeignKey
+    ForeignKey,
+    Boolean
 )
 from sqlalchemy.orm import relationship
 
@@ -518,3 +519,156 @@ class LessonProgress(Base):
     learner_profile = relationship("LearnerProfile")
 
     lesson = relationship("Lesson")
+    
+# =====================================================
+# TRAINER ASSIGNMENT
+# =====================================================
+
+class TrainerAssignment(Base):
+    __tablename__ = "trainer_assignments"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    trainer_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False
+    )
+
+    learner_profile_id = Column(
+        Integer,
+        ForeignKey("learner_profiles.id"),
+        nullable=False
+    )
+
+    assigned_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+    trainer = relationship(
+        "User"
+    )
+
+    learner_profile = relationship(
+        "LearnerProfile"
+    )
+    
+# =====================================================
+# TRAINER FEEDBACK
+# =====================================================
+
+class TrainerFeedback(Base):
+    __tablename__ = "trainer_feedback"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    trainer_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False
+    )
+
+    learner_profile_id = Column(
+        Integer,
+        ForeignKey("learner_profiles.id"),
+        nullable=False
+    )
+
+    feedback = Column(Text, nullable=False)
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+    trainer = relationship("User")
+    learner_profile = relationship("LearnerProfile")
+    
+# =====================================================
+# CERTIFICATES
+# =====================================================
+
+class Certificate(Base):
+    __tablename__ = "certificates"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    learner_profile_id = Column(
+        Integer,
+        ForeignKey("learner_profiles.id"),
+        nullable=False
+    )
+
+    course_id = Column(
+        Integer,
+        ForeignKey("courses.id"),
+        nullable=False
+    )
+
+    certificate_number = Column(
+        String,
+        unique=True,
+        nullable=False
+    )
+
+    issued_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+    learner_profile = relationship("LearnerProfile")
+    course = relationship("Course")
+    
+# =====================================================
+# NOTIFICATIONS
+# =====================================================
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False
+    )
+
+    title = Column(String, nullable=False)
+
+    message = Column(Text, nullable=False)
+
+    is_read = Column(
+        Boolean,
+        default=False
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+    user = relationship("User")
+    
+class Announcement(Base):
+
+    __tablename__ = "announcements"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    title = Column(String(200), nullable=False)
+
+    message = Column(Text, nullable=False)
+
+    created_by = Column(
+        Integer,
+        ForeignKey("users.id")
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+    creator = relationship("User")
