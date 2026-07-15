@@ -1,10 +1,12 @@
 import cv2
 import mediapipe as mp
 from collections import Counter, deque
+import time
 
 from ai.landmarks import get_finger_states
 from ai.predictor import predict
 from ai.assessment import assess_sign
+from ai.gesture_config import EXPECTED_GESTURE_TIME
 
 # -----------------------------
 # MediaPipe Hands
@@ -19,6 +21,16 @@ hands = mp_hands.Hands(
     min_tracking_confidence=0.7
 )
 
+mp_pose = mp.solutions.pose
+
+pose = mp_pose.Pose(
+    static_image_mode=False,
+    model_complexity=1,
+    smooth_landmarks=True,
+    min_detection_confidence=0.5,
+    min_tracking_confidence=0.5
+)
+
 cap = cv2.VideoCapture(0)
 
 if not cap.isOpened():
@@ -28,6 +40,21 @@ if not cap.isOpened():
 print("Press 'q' to quit.")
 
 prediction_buffer = deque(maxlen=3)
+movement_buffer = deque(maxlen=10)
+
+expected_sign = "A"
+
+label = None
+confidence = 0.0
+
+
+gesture_start_time = None
+gesture_time = 0.0
+
+position_accuracy = 100.0
+motion_accuracy = 100.0
+timing_accuracy = 100.0
+movement_quality = 100.0
 
 while True:
 
@@ -41,6 +68,7 @@ while True:
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     results = hands.process(rgb)
+    pose_results = pose.process(rgb)
 
     if results.multi_hand_landmarks:
 
@@ -100,16 +128,6 @@ while True:
                 
                 if confidence >= 0.70:
                     prediction_buffer.append(label)
-
-                expected_sign = "A"
-
-                assessment = assess_sign(
-                    expected_sign,
-                    label,
-                    confidence
-                )
-
-                print(assessment)
                 
                 if len(prediction_buffer) > 0:
                     label = Counter(prediction_buffer).most_common(1)[0][0]
@@ -136,6 +154,234 @@ while True:
                 (255, 0, 0),
                 2
             )
+            
+    # -----------------------------
+    # Draw Pose Landmarks
+    # -----------------------------
+    if pose_results.pose_landmarks:
+        print("Pose Detected")
+        mp_draw.draw_landmarks(
+            frame,
+            pose_results.pose_landmarks,
+            mp_pose.POSE_CONNECTIONS
+        )
+        
+        landmarks = pose_results.pose_landmarks.landmark
+        print(
+            landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER].x,
+            landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER].y
+        )
+
+        left_shoulder = landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER]
+        
+        h, w, _ = frame.shape
+
+        ls_x = int(left_shoulder.x * w)
+        ls_y = int(left_shoulder.y * h)
+        
+        right_shoulder = landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER]
+        left_wrist = landmarks[mp_pose.PoseLandmark.LEFT_WRIST]
+        right_wrist = landmarks[mp_pose.PoseLandmark.RIGHT_WRIST]
+        
+        rs_x = int(right_shoulder.x * w)
+        rs_y = int(right_shoulder.y * h)
+
+        lw_x = int(left_wrist.x * w)
+        lw_y = int(left_wrist.y * h)
+
+        rw_x = int(right_wrist.x * w)
+        rw_y = int(right_wrist.y * h)
+        
+        movement_buffer.append({
+        "left_shoulder": (ls_x, ls_y),
+        "right_shoulder": (rs_x, rs_y),
+        "left_wrist": (lw_x, lw_y),
+        "right_wrist": (rw_x, rw_y)
+        })
+        
+        # Distance between left shoulder and left wrist
+
+        distance = ((lw_x - ls_x) ** 2 + (lw_y - ls_y) ** 2) ** 0.5
+        
+        MAX_DISTANCE = 250
+
+        position_accuracy = max(
+            0,
+            100 - (distance / MAX_DISTANCE) * 100
+        )
+
+        position_accuracy = round(position_accuracy, 2)
+        
+        cv2.putText(
+            frame,
+            f"Position: {position_accuracy:.1f}%",
+            (20,200),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (255,255,0),
+            2
+        )
+        
+        if len(movement_buffer) >= 2:
+            movement_quality = 100.0
+
+            previous = movement_buffer[-2]
+            current = movement_buffer[-1]
+            prev_x, prev_y = previous["left_wrist"]
+            curr_x, curr_y = current["left_wrist"]
+            dx = curr_x - prev_x
+            dy = curr_y - prev_y
+            direction = "Still"
+            expected_direction = "Right"
+
+            if abs(dx) > abs(dy):
+
+                if dx > 5:
+                    direction = "Right"
+
+                elif dx < -5:
+                    direction = "Left"
+
+            else:
+
+                if dy > 5:
+                    direction = "Down"
+
+                elif dy < -5:
+                    direction = "Up"
+                    
+            if direction != "Still" and gesture_start_time is None:
+                gesture_start_time = time.time()
+                
+            if direction == "Still" and gesture_start_time is not None:
+
+                gesture_time = time.time() - gesture_start_time
+
+                gesture_start_time = None
+                
+            expected_time = EXPECTED_GESTURE_TIME.get(expected_sign, 1.0)
+
+            difference = abs(gesture_time - expected_time)
+            
+            timing_accuracy = max(
+                0,
+                100 - (difference / expected_time) * 100
+            )
+
+            timing_accuracy = round(timing_accuracy, 2)
+                      
+            if direction == expected_direction:
+                motion_accuracy = 100.0
+
+            elif direction == "Still":
+                motion_accuracy = 40.0
+
+            else:
+                motion_accuracy = 0.0
+                
+            cv2.putText(
+                frame,
+                f"Motion: {motion_accuracy:.1f}%",
+                (20, 240),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (0,255,255),
+                2
+            )
+            
+            cv2.putText(
+                frame,
+                f"Timing: {timing_accuracy:.1f}%",
+                (20, 280),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (255, 255, 0),
+                2
+            )
+                    
+            cv2.putText(
+                frame,
+                f"Movement: {direction}",
+                (20, 160),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (0, 255, 0),
+                2
+            )
+            
+        if len(movement_buffer) >= 5:
+        
+            changes = []
+
+            for i in range(1, len(movement_buffer)):
+
+                prev = movement_buffer[i-1]["left_wrist"]
+                curr = movement_buffer[i]["left_wrist"]
+
+                dx = curr[0] - prev[0]
+                dy = curr[1] - prev[1]
+
+                changes.append(abs(dx) + abs(dy))
+                
+            average_change = sum(changes) / len(changes)
+
+            variation = max(changes) - min(changes)
+            
+            movement_quality = max(
+                0,
+                100 - variation
+            )
+
+            movement_quality = round(movement_quality,2)
+
+        cv2.circle(frame, (ls_x, ls_y), 8, (0,0,255), -1)
+        
+        cv2.putText(
+            frame,
+            f"Quality: {movement_quality:.1f}%",
+            (20,320),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (0,255,0),
+            2
+        )
+
+        cv2.putText(
+            frame,
+            f"LS: ({ls_x}, {ls_y})",
+            (20,80),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (0,255,255),
+            2
+        )
+        
+        cv2.putText(
+            frame,
+            f"Frames Stored: {len(movement_buffer)}",
+            (20,120),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (255,255,0),
+            2
+        )
+
+        left_elbow = landmarks[mp_pose.PoseLandmark.LEFT_ELBOW]
+        right_elbow = landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW]
+        
+        if label is not None:
+            assessment = assess_sign(
+                expected_sign,
+                label,
+                confidence,
+                position_accuracy=position_accuracy,
+                motion_accuracy=motion_accuracy,
+                timing_accuracy=timing_accuracy,
+                movement_quality=movement_quality
+            )
+
+            print(assessment)
+
 
     cv2.imshow("Sign Language Recognition", frame)
 
@@ -144,4 +390,5 @@ while True:
 
 cap.release()
 hands.close()
+pose.close()  
 cv2.destroyAllWindows()
