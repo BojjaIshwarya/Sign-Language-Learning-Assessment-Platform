@@ -7,6 +7,15 @@ from ai.landmarks import get_finger_states
 from ai.predictor import predict
 from ai.assessment import assess_sign
 from ai.gesture_config import EXPECTED_GESTURE_TIME
+from ai.feedback import generate_feedback, generate_improvement_plan
+from ai.progress import (
+    save_progress,
+    get_learning_statistics,
+    get_skill_progress,
+    get_weak_area,
+    get_recommendation,
+    get_performance_forecast
+)
 
 # -----------------------------
 # MediaPipe Hands
@@ -55,6 +64,7 @@ position_accuracy = 100.0
 motion_accuracy = 100.0
 timing_accuracy = 100.0
 movement_quality = 100.0
+gesture_saved = False
 
 while True:
 
@@ -154,7 +164,9 @@ while True:
                 (255, 0, 0),
                 2
             )
-            
+       
+    else:
+        gesture_saved = False      
     # -----------------------------
     # Draw Pose Landmarks
     # -----------------------------
@@ -329,7 +341,7 @@ while True:
             
             movement_quality = max(
                 0,
-                100 - variation
+                100 - (variation * 0.5)
             )
 
             movement_quality = round(movement_quality,2)
@@ -370,6 +382,10 @@ while True:
         right_elbow = landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW]
         
         if label is not None:
+            print("Position:", position_accuracy)
+            print("Motion:", motion_accuracy)
+            print("Timing:", timing_accuracy)
+            print("Quality:", movement_quality)
             assessment = assess_sign(
                 expected_sign,
                 label,
@@ -379,6 +395,161 @@ while True:
                 timing_accuracy=timing_accuracy,
                 movement_quality=movement_quality
             )
+            
+            if (
+                assessment["correct"]
+                and confidence >= 0.80
+                and not gesture_saved
+            ):
+
+
+                save_progress(
+                    expected_sign,
+                    assessment
+                )
+
+                gesture_saved = True 
+            
+            stats = get_learning_statistics()
+            progress = get_skill_progress()
+            weak_area = get_weak_area()
+            recommendation = get_recommendation()
+            forecast = get_performance_forecast()
+            cv2.putText(
+                frame,
+                "Forecast:",
+                (20, 400),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (0,255,255),
+                2
+            )
+
+            cv2.putText(
+                frame,
+                forecast,
+                (20,430),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.55,
+                (255,255,255),
+                2
+            )
+            cv2.putText(
+                frame,
+                "Recommendation:",
+                (20, 340),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (255,255,0),
+                2
+            )
+
+            cv2.putText(
+                frame,
+                recommendation,
+                (20, 370),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.55,
+                (255,255,255),
+                2
+            )
+            cv2.putText(
+                frame,
+                f"Weak Area: {weak_area}",
+                (20, 380),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (0, 165, 255),
+                2
+            )
+            cv2.putText(
+                frame,
+                f"Progress: {progress}",
+                (20, 410),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (0, 255, 255),
+                2
+            )
+            print(stats)
+
+            if stats:
+
+                cv2.putText(
+
+                    frame,
+
+                    f"Avg: {stats['average_accuracy']}%",
+
+                    (20,440),
+
+                    cv2.FONT_HERSHEY_SIMPLEX,
+
+                    0.6,
+
+                    (255,255,255),
+
+                    2
+
+                )
+
+                cv2.putText(
+
+                    frame,
+
+                    f"Practice: {stats['total_practice']}",
+
+                   (20,470),
+
+                    cv2.FONT_HERSHEY_SIMPLEX,
+
+                    0.6,
+
+                    (255,255,255),
+
+                    2
+
+                )
+            
+            feedback = generate_feedback(assessment)
+            plan = generate_improvement_plan(assessment)
+            cv2.putText(
+                frame,
+                f"Plan: {plan}",
+                (20,500),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.55,
+                (255, 255, 255),
+                2
+            )   
+            feedback_y = 360
+
+            for message in feedback:
+            
+                if (
+                    "Correct" in message
+                    or "Excellent" in message
+                    or "Outstanding" in message
+                    or "Very Good" in message
+                    or "Good Job" in message
+                ):
+                    color = (0,255,0)
+                else:
+                    color = (0,0,255)
+
+                cv2.putText(
+                    frame,
+                    message,
+                    (20, feedback_y),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    color,
+                    2
+                )
+
+                feedback_y += 30
+            for message in feedback:
+                print(message)
 
             print(assessment)
 
