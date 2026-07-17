@@ -16,6 +16,25 @@ from ai.progress import (
     get_recommendation,
     get_performance_forecast
 )
+from ai.assessment_engine import (
+    get_current_sign,
+    next_sign,
+    assessment_completed,
+    can_move_next,
+    mark_completed,
+    reset_assessment,
+    get_question_number,
+    get_total_questions,
+    save_assessment_score,
+    get_final_score,
+    get_grade,
+    get_result,
+    reset_exam,
+    save_assessment_report,
+    get_latest_report,
+    report_already_saved
+    
+)
 
 # -----------------------------
 # MediaPipe Hands
@@ -51,7 +70,7 @@ print("Press 'q' to quit.")
 prediction_buffer = deque(maxlen=3)
 movement_buffer = deque(maxlen=10)
 
-expected_sign = "A"
+expected_sign = get_current_sign()
 
 label = None
 confidence = 0.0
@@ -166,7 +185,8 @@ while True:
             )
        
     else:
-        gesture_saved = False      
+        gesture_saved = False 
+        reset_assessment()     
     # -----------------------------
     # Draw Pose Landmarks
     # -----------------------------
@@ -395,6 +415,118 @@ while True:
                 timing_accuracy=timing_accuracy,
                 movement_quality=movement_quality
             )
+            if (
+                assessment["correct"]
+                and confidence >= 0.80
+                and can_move_next()
+            ):
+            
+                save_assessment_score(
+                    assessment["overall_accuracy"]
+                )
+
+                next_sign()
+                
+                expected_sign = get_current_sign()
+
+                mark_completed()
+                
+            if assessment_completed():
+                
+                if not report_already_saved():
+                    save_assessment_report()
+                report = get_latest_report()
+                
+                cv2.putText(
+                    frame,
+                    "ASSESSMENT COMPLETED",
+                    (20,120),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.8,
+                    (0,255,0),
+                    2
+                )
+                
+                cv2.putText(
+                    frame,
+                    f"Score : {get_final_score()}%",
+                    (20,150),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.7,
+                    (255,255,255),
+                    2
+                )
+
+                cv2.putText(
+                    frame,
+                    f"Grade : {get_grade()}",
+                    (20,180),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.7,
+                    (255,255,255),
+                    2
+                )
+
+                cv2.putText(
+                    frame,
+                    f"Result : {get_result()}",
+                    (20,210),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.7,
+                    (0,255,255),
+                    2
+                )
+                
+                if report:
+
+                    cv2.putText(
+                        frame,
+                        f"Date : {report['date']}",
+                        (20,280),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.55,
+                        (200,200,200),
+                        2
+                    )
+
+                    cv2.putText(
+                        frame,
+                        f"Questions : {report['questions']}",
+                        (20,310),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.55,
+                        (200,200,200),
+                        2
+                    )
+
+                
+            cv2.putText(
+                frame,
+                f"Question {get_question_number()}/{get_total_questions()}",
+                (20, 70),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (0, 255, 255),
+                2
+            )
+                
+            cv2.putText(
+
+                frame,
+
+                f"Perform Sign : {expected_sign}",
+
+                (20,100),
+
+                cv2.FONT_HERSHEY_SIMPLEX,
+
+                0.8,
+
+               (255,255,0),
+
+               2
+
+            )
             
             if (
                 assessment["correct"]
@@ -522,7 +654,7 @@ while True:
                 (255, 255, 255),
                 2
             )   
-            feedback_y = 360
+            feedback_y = 420
 
             for message in feedback:
             
@@ -556,7 +688,12 @@ while True:
 
     cv2.imshow("Sign Language Recognition", frame)
 
-    if cv2.waitKey(1) & 0xFF == ord("q"):
+    key = cv2.waitKey(1) & 0xFF
+
+    if key == ord("r"):
+        reset_exam()
+
+    if key == ord("q"):
         break
 
 cap.release()
